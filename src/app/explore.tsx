@@ -1,180 +1,113 @@
-import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
-import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Redirect, useRouter } from 'expo-router';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ExternalLink } from '@/components/external-link';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Collapsible } from '@/components/ui/collapsible';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { isAuthenticated } from './auth-state';
 
-export default function TabTwoScreen() {
-  const safeAreaInsets = useSafeAreaInsets();
-  const insets = {
-    ...safeAreaInsets,
-    bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
-  };
-  const theme = useTheme();
+const tournaments = [
+  { game: '1. Valorant', name: 'CLUTCH MASTERS', description: 'Un mini descripción here for competitive play.', colors: ['#E44A61', '#7D334A'] },
+  { game: '2. League of Legends', name: 'LA GRIETA INVOCADA', description: 'Torneo de eSports 5v5 con premios.', colors: ['#B98B43', '#4F9FB9'] },
+  { game: 'Rocket League', name: 'BOOSTED CUP', description: 'Un mini descripción here para equipos.', colors: ['#5D8FDC', '#D7E8FF'] },
+  { game: 'FIFA', name: 'CAMPEONATO DIGITAL', description: 'Un mini descripción here de fútbol virtual.', colors: ['#EDEDED', '#78A1D1'] },
+  { game: 'CS:GO 2', name: 'FRAG FEST', description: 'Un mini descripción for tactical action.', colors: ['#EFF6FF', '#A3AEBB'] },
+  { game: 'Fortnite', name: 'BATALLA CAMPAL', description: 'Un mini descripción here de battle royale.', colors: ['#F2F5FF', '#A878E8'] },
+  { game: '7. Call of Duty', name: 'WARZONE CUP', description: 'Un mini descripción here for battle royale action.', colors: ['#8C9B7C', '#E2E7D8'] },
+  { game: 'NBA 2K', name: 'HOOP DREAMS', description: 'Un mini descripción here for virtual basketball.', colors: ['#E94F5A', '#E8A83B'] },
+  { game: 'Apex Legends', name: 'TORNEO DE LEYENDAS', description: 'Un mini descripción here de battle royale.', colors: ['#E35A5A', '#C1C6D5'] },
+];
 
-  const contentPlatformStyle = Platform.select({
-    android: {
-      paddingTop: insets.top,
-      paddingLeft: insets.left,
-      paddingRight: insets.right,
-      paddingBottom: insets.bottom,
-    },
-    web: {
-      paddingTop: Spacing.six,
-      paddingBottom: Spacing.four,
-    },
-  });
+const registeredTournaments = [
+  ['CLUTCH MASTERS', 'No mini registrado', true],
+  ['LA GRIETA INVOCADA', 'No mini registrado', true],
+  ['FIFA', 'No mini registrado', true],
+  ['CALL OF DUTY', 'No mini registrado', false],
+  ['CAMPEONATO DIGITAL', 'No mini registrado', true],
+] as const;
+
+export default function EsportsScreen() {
+  const router = useRouter();
+  const [joined, setJoined] = useState<string[]>([]);
+
+  if (!isAuthenticated()) {
+    return <Redirect href="/login" />;
+  }
+
+  function toggleJoin(name: string) {
+    setJoined((current) => current.includes(name) ? current.filter((item) => item !== name) : [...current, name]);
+  }
 
   return (
-    <ScrollView
-      style={[styles.scrollView, { backgroundColor: theme.background }]}
-      contentInset={insets}
-      contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}>
-      <ThemedView style={styles.container}>
-        <ThemedView style={styles.titleContainer}>
-          <ThemedText type="subtitle">Explore</ThemedText>
-          <ThemedText style={styles.centerText} themeColor="textSecondary">
-            This starter app includes example{'\n'}code to help you get started.
-          </ThemedText>
-
-          <ExternalLink href="https://docs.expo.dev" asChild>
-            <Pressable style={({ pressed }) => pressed && styles.pressed}>
-              <ThemedView type="backgroundElement" style={styles.linkButton}>
-                <ThemedText type="link">Expo documentation</ThemedText>
-                <SymbolView
-                  tintColor={theme.text}
-                  name={{ ios: 'arrow.up.right.square', android: 'link', web: 'link' }}
-                  size={12}
-                />
-              </ThemedView>
+    <View style={styles.screen}>
+      <View pointerEvents="none" style={[styles.orb, styles.orbTop]} />
+      <View pointerEvents="none" style={[styles.orb, styles.orbBottom]} />
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.page}>
+          <View style={styles.header}>
+            <Pressable accessibilityRole="button" onPress={() => router.replace('/')} style={({ pressed }) => [styles.brandRow, pressed && styles.pressed]}>
+              <View style={styles.brandMark}><View style={styles.markShape} /><Text style={styles.markSlash}>/</Text></View>
+              <View><Text style={styles.brandName}>NEXUS</Text><Text style={styles.brandCaption}>TOURNAMENTS</Text></View>
             </Pressable>
-          </ExternalLink>
-        </ThemedView>
+            <View style={styles.liveBadge}><View style={styles.liveDot} /><Text style={styles.liveText}>LIVE</Text></View>
+            <View style={styles.headerAvatar}><View style={styles.avatarHair} /><View style={styles.avatarFace} /><View style={styles.avatarShoulders} /><Text style={styles.headerChevron}>⌄</Text></View>
+          </View>
 
-        <ThemedView style={styles.sectionsWrapper}>
-          <Collapsible title="File-based routing">
-            <ThemedText type="small">
-              This app has two screens: <ThemedText type="code">src/app/index.tsx</ThemedText> and{' '}
-              <ThemedText type="code">src/app/explore.tsx</ThemedText>
-            </ThemedText>
-            <ThemedText type="small">
-              The layout file in <ThemedText type="code">src/app/_layout.tsx</ThemedText> sets up
-              the tab navigator.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/router/introduction">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
+          <View style={styles.layout}>
+            <View style={styles.sidebar}>
+              <View style={styles.profileCard}>
+                <View style={styles.largeAvatar}><View style={styles.largeHair} /><View style={styles.largeFace} /><View style={styles.largeShoulders} /></View>
+                <View style={styles.profileCopy}><Text style={styles.profileLine}>♙  mi tournaments</Text><Text style={styles.profileLine}>♧  ver perfil⌄</Text></View>
+                <Pressable onPress={() => router.replace('/login')} style={({ pressed }) => [styles.logoutButton, pressed && styles.pressed]}><Text style={styles.logoutText}>Cerrar Sesión</Text></Pressable>
+              </View>
+              <View style={styles.registeredPanel}>
+                <Text style={styles.registeredTitle}>los torneos inscriptos</Text>
+                {registeredTournaments.map(([name, caption, active]) => (
+                  <View key={name} style={styles.registeredRow}>
+                    <Text style={styles.registeredIcon}>{name === 'CALL OF DUTY' ? '⌁' : '▣'}</Text>
+                    <View style={styles.registeredCopy}><Text numberOfLines={1} style={styles.registeredName}>{name}</Text><Text style={styles.registeredCaption}>{caption}</Text></View>
+                    <View style={[styles.status, active ? styles.statusOn : styles.statusOff]}><View style={styles.statusDot} /></View>
+                  </View>
+                ))}
+              </View>
+            </View>
 
-          <Collapsible title="Android, iOS, and web support">
-            <ThemedView type="backgroundElement" style={styles.collapsibleContent}>
-              <ThemedText type="small">
-                You can open this project on Android, iOS, and the web. To open the web version,
-                press <ThemedText type="smallBold">w</ThemedText> in the terminal running this
-                project.
-              </ThemedText>
-              <Image
-                source={require('@/assets/images/tutorial-web.png')}
-                style={styles.imageTutorial}
-              />
-            </ThemedView>
-          </Collapsible>
+              <View style={[styles.mainContent, { paddingHorizontal: 12, paddingTop: 4, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(147, 222, 245, 0.32)', backgroundColor: 'rgba(7, 24, 39, 0.52)', shadowColor: '#123E50', shadowOpacity: 0.28, shadowRadius: 18, shadowOffset: { width: 0, height: 7 }, elevation: 5 }]}>
+              <View style={styles.contentTop}>
+                <View><Pressable onPress={() => router.replace('/')} style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}><Text style={styles.backArrow}>←</Text><Text style={styles.backText}>Volver</Text></Pressable><Text style={styles.heading}>TORNEOS DISPONIBLES</Text></View>
+                <Pressable onPress={() => {}} style={({ pressed }) => [styles.createButton, pressed && styles.pressed]}><Text style={styles.createPlus}>＋</Text><Text style={styles.createText}>CREAR TORNEO</Text></Pressable>
+              </View>
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.grid}>
+                {tournaments.map((tournament) => {
+                  const isJoined = joined.includes(tournament.name);
+                  return <TournamentCard key={tournament.name} {...tournament} isJoined={isJoined} onToggle={() => toggleJoin(tournament.name)} />;
+                })}
+              </ScrollView>
+            </View>
+          </View>
+        </View>
+      </SafeAreaView>
+    </View>
+  );
+}
 
-          <Collapsible title="Images">
-            <ThemedText type="small">
-              For static images, you can use the <ThemedText type="code">@2x</ThemedText> and{' '}
-              <ThemedText type="code">@3x</ThemedText> suffixes to provide files for different
-              screen densities.
-            </ThemedText>
-            <Image source={require('@/assets/images/react-logo.png')} style={styles.imageReact} />
-            <ExternalLink href="https://reactnative.dev/docs/images">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Light and dark mode components">
-            <ThemedText type="small">
-              This template has light and dark mode support. The{' '}
-              <ThemedText type="code">useColorScheme()</ThemedText> hook lets you inspect what the
-              user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Animations">
-            <ThemedText type="small">
-              This template includes an example of an animated component. The{' '}
-              <ThemedText type="code">src/components/ui/collapsible.tsx</ThemedText> component uses
-              the powerful <ThemedText type="code">react-native-reanimated</ThemedText> library to
-              animate opening this hint.
-            </ThemedText>
-          </Collapsible>
-        </ThemedView>
-        {Platform.OS === 'web' && <WebBadge />}
-      </ThemedView>
-    </ScrollView>
+function TournamentCard({ game, name, description, colors, isJoined, onToggle }: { game: string; name: string; description: string; colors: string[]; isJoined: boolean; onToggle: () => void }) {
+  return (
+    <View style={styles.tournamentCard}>
+      <Text style={styles.gameLabel}>{game}</Text>
+      <Text numberOfLines={1} style={styles.tournamentName}>{name}</Text>
+      <Text numberOfLines={2} style={styles.description}>{description}</Text>
+      <View style={styles.cardFooter}>
+        <View style={styles.gameMarks}><View style={[styles.markOne, { backgroundColor: colors[0] }]} /><View style={[styles.markTwo, { backgroundColor: colors[1] }]} /><View style={[styles.markThree, { backgroundColor: colors[0] }]} /></View>
+        <Pressable onPress={onToggle} style={({ pressed }) => [styles.joinButton, isJoined && styles.joinedButton, pressed && styles.pressed]}><Text style={styles.joinText}>{isJoined ? 'Inscripto' : 'Inscribirse'}</Text></Pressable>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  contentContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  container: {
-    maxWidth: MaxContentWidth,
-    flexGrow: 1,
-  },
-  titleContainer: {
-    gap: Spacing.three,
-    alignItems: 'center',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.six,
-  },
-  centerText: {
-    textAlign: 'center',
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  linkButton: {
-    flexDirection: 'row',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.two,
-    borderRadius: Spacing.five,
-    justifyContent: 'center',
-    gap: Spacing.one,
-    alignItems: 'center',
-  },
-  sectionsWrapper: {
-    gap: Spacing.five,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.three,
-  },
-  collapsibleContent: {
-    alignItems: 'center',
-  },
-  imageTutorial: {
-    width: '100%',
-    aspectRatio: 296 / 171,
-    borderRadius: Spacing.three,
-    marginTop: Spacing.two,
-  },
-  imageReact: {
-    width: 100,
-    height: 100,
-    alignSelf: 'center',
-  },
+  screen: { flex: 1, backgroundColor: '#050B14', overflow: 'hidden' }, safeArea: { flex: 1 }, page: { flex: 1, width: '100%', maxWidth: 1220, alignSelf: 'center', paddingHorizontal: 32, paddingTop: 8 },
+  orb: { position: 'absolute', borderRadius: 999 }, orbTop: { width: 390, height: 390, right: -120, top: -145, backgroundColor: '#07586A', opacity: 0.85 }, orbBottom: { width: 280, height: 280, left: -210, bottom: -55, backgroundColor: '#321679', opacity: 0.85 },
+  header: { height: 49, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', position: 'relative' }, brandRow: { position: 'absolute', left: 0, flexDirection: 'row', alignItems: 'center', gap: 9 }, brandMark: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: '#C8F8FF', borderWidth: 1, borderColor: '#F0FFFF', shadowColor: '#55E8FF', shadowOpacity: 0.65, shadowRadius: 14 }, markShape: { position: 'absolute', width: 18, height: 18, borderRadius: 4, backgroundColor: '#102A43', transform: [{ rotate: '45deg' }] }, markSlash: { color: '#DBFCFF', fontSize: 25, lineHeight: 27, fontWeight: '200' }, brandName: { color: '#F5FBFF', fontSize: 16, fontWeight: '900', letterSpacing: 2.5 }, brandCaption: { color: '#78EDFF', fontSize: 6, fontWeight: '900', letterSpacing: 1.8 }, liveBadge: { height: 25, borderRadius: 16, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(12, 47, 61, 0.7)', borderWidth: 1, borderColor: 'rgba(126, 245, 255, 0.3)' }, liveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: '#70F6BF' }, liveText: { color: '#B8FEEE', fontSize: 8, fontWeight: '900', letterSpacing: 1 }, headerAvatar: { position: 'absolute', right: 0, width: 38, height: 38, borderRadius: 20, overflow: 'visible', backgroundColor: '#A6D3E7', borderWidth: 2, borderColor: 'rgba(230, 251, 255, 0.8)' }, headerChevron: { position: 'absolute', right: -18, top: 6, color: '#D3F8FF', fontSize: 15 }, avatarHair: { position: 'absolute', top: 4, left: 8, width: 19, height: 14, borderRadius: 10, backgroundColor: '#41546C', zIndex: 2 }, avatarFace: { position: 'absolute', top: 8, left: 11, width: 15, height: 17, borderRadius: 9, backgroundColor: '#F2C5A8', zIndex: 3 }, avatarShoulders: { position: 'absolute', bottom: -7, left: 2, width: 31, height: 21, borderRadius: 18, backgroundColor: '#506D89', zIndex: 1 },
+  layout: { flex: 1, flexDirection: 'row', gap: 38, paddingTop: 4, paddingBottom: 12 }, sidebar: { width: 258, gap: 15 }, profileCard: { minHeight: 127, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(147, 222, 245, 0.3)', backgroundColor: 'rgba(12, 32, 49, 0.85)', padding: 12, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 10 }, largeAvatar: { width: 62, height: 62, borderRadius: 32, overflow: 'hidden', backgroundColor: '#A6D3E7', borderWidth: 1, borderColor: '#C7F6FF' }, largeHair: { position: 'absolute', top: 8, left: 14, width: 32, height: 24, borderRadius: 18, backgroundColor: '#41546C', zIndex: 2 }, largeFace: { position: 'absolute', top: 13, left: 20, width: 25, height: 28, borderRadius: 14, backgroundColor: '#F2C5A8', zIndex: 3 }, largeShoulders: { position: 'absolute', bottom: -12, left: 4, width: 54, height: 34, borderRadius: 28, backgroundColor: '#506D89', zIndex: 1 }, profileCopy: { flex: 1, minWidth: 135 }, profileLine: { color: '#DCEBF3', fontSize: 11, marginBottom: 5 }, logoutButton: { width: '100%', height: 30, borderRadius: 18, backgroundColor: '#1DE9DF', alignItems: 'center', justifyContent: 'center', shadowColor: '#24F4EF', shadowOpacity: 0.65, shadowRadius: 12 }, logoutText: { color: '#05223B', fontSize: 13, fontWeight: '900' }, registeredPanel: { flex: 1, minHeight: 260, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(147, 222, 245, 0.3)', backgroundColor: 'rgba(9, 28, 45, 0.82)', paddingHorizontal: 13, paddingTop: 12 }, registeredTitle: { color: '#F0F7FF', fontSize: 19, marginBottom: 9 }, registeredRow: { minHeight: 48, borderBottomWidth: 1, borderBottomColor: 'rgba(158, 224, 242, 0.18)', flexDirection: 'row', alignItems: 'center', gap: 9 }, registeredIcon: { width: 22, color: '#B6D0E1', fontSize: 17, textAlign: 'center' }, registeredCopy: { flex: 1 }, registeredName: { color: '#F3F8FD', fontSize: 12, fontWeight: '900' }, registeredCaption: { color: '#93A9B9', fontSize: 9, marginTop: 2 }, status: { width: 25, height: 15, borderRadius: 10, alignItems: 'center', justifyContent: 'center' }, statusOn: { backgroundColor: 'rgba(82, 229, 203, 0.35)' }, statusOff: { backgroundColor: 'rgba(220, 80, 96, 0.35)' }, statusDot: { width: 6, height: 6, borderRadius: 4, backgroundColor: '#6CE7C5' },
+  mainContent: { flex: 1, minWidth: 0 }, contentTop: { minHeight: 58, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 }, backButton: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 3 }, backArrow: { color: '#7BEFFF', fontSize: 18 }, backText: { color: '#8EC5D6', fontSize: 12, fontWeight: '800' }, heading: { color: '#F4FAFF', fontSize: 27, fontWeight: '300', letterSpacing: 0.2 }, createButton: { height: 31, borderRadius: 18, paddingHorizontal: 13, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#18E9E0', shadowColor: '#20F4E8', shadowOpacity: 0.8, shadowRadius: 13 }, createPlus: { color: '#04223A', fontSize: 19, lineHeight: 20 }, createText: { color: '#04223A', fontSize: 12, fontWeight: '900' }, grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingTop: 5, paddingBottom: 20 }, tournamentCard: { width: '31.8%', minWidth: 205, height: 109, padding: 10, borderRadius: 11, borderWidth: 1, borderColor: 'rgba(144, 222, 244, 0.32)', backgroundColor: 'rgba(12, 33, 49, 0.86)', shadowColor: '#153F52', shadowOpacity: 0.32, shadowRadius: 13, shadowOffset: { width: 0, height: 5 }, elevation: 4 }, gameLabel: { color: '#D8E7F1', fontSize: 11 }, tournamentName: { color: '#F5FAFF', fontSize: 15, fontWeight: '900', marginTop: 1 }, description: { color: '#E4EFF5', fontSize: 11, lineHeight: 13, maxWidth: 225, marginTop: 1 }, cardFooter: { flex: 1, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 7 }, gameMarks: { flexDirection: 'row', alignItems: 'center', gap: 3, maxWidth: 82 }, markOne: { width: 12, height: 17, transform: [{ rotate: '35deg' }], borderRadius: 2 }, markTwo: { width: 13, height: 13, borderRadius: 8, opacity: 0.85 }, markThree: { width: 14, height: 10, transform: [{ skewX: '-20deg' }] }, joinButton: { minWidth: 79, height: 26, paddingHorizontal: 9, borderRadius: 15, backgroundColor: '#13E5D7', alignItems: 'center', justifyContent: 'center', shadowColor: '#20F4E8', shadowOpacity: 0.6, shadowRadius: 10 }, joinedButton: { backgroundColor: '#63AAB0' }, joinText: { color: '#04223A', fontSize: 11, fontWeight: '900' }, pressed: { opacity: 0.75, transform: [{ scale: 0.98 }] },
 });
