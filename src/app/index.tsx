@@ -8,6 +8,30 @@ import { isAuthenticated, setAuthenticated } from './auth-state';
 export default function Index() {
   const router = useRouter();
   const [profileMenuVisible, setProfileMenuVisible] = useState(false);
+  const [profileMenuProgress] = useState(() => new Animated.Value(0));
+
+  function toggleProfileMenu() {
+    if (profileMenuVisible) {
+      Animated.timing(profileMenuProgress, {
+        toValue: 0,
+        duration: 180,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished) {
+          setProfileMenuVisible(false);
+        }
+      });
+      return;
+    }
+
+    setProfileMenuVisible(true);
+    Animated.spring(profileMenuProgress, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 18,
+      bounciness: 6,
+    }).start();
+  }
 
   if (!isAuthenticated()) {
     return <Redirect href="/login" />;
@@ -41,17 +65,33 @@ export default function Index() {
                 <Pressable
                   accessibilityLabel="Abrir menú de perfil"
                   accessibilityRole="button"
-                  onPress={() => setProfileMenuVisible((visible) => !visible)}
+                  onPress={toggleProfileMenu}
                   style={({ pressed }) => [styles.profileButton, pressed && styles.profilePressed]}
                 >
                   <View style={styles.avatar}>
-                    <Text style={styles.avatarHead}>●</Text>
-                    <Text style={styles.avatarBody}>▰</Text>
+                    <View style={styles.avatarHair} />
+                    <View style={styles.avatarFace} />
+                    <View style={styles.avatarNeck} />
+                    <View style={styles.avatarShoulders}>
+                      <View style={styles.avatarShirt} />
+                    </View>
                   </View>
                   <Text style={styles.profileChevron}>{profileMenuVisible ? '⌃' : '⌄'}</Text>
                 </Pressable>
                 {profileMenuVisible && (
-                  <View style={styles.profileMenu}>
+                  <Animated.View
+                    pointerEvents={profileMenuVisible ? 'auto' : 'none'}
+                    style={[
+                      styles.profileMenu,
+                      {
+                        opacity: profileMenuProgress,
+                        transform: [
+                          { translateY: profileMenuProgress.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) },
+                          { scale: profileMenuProgress.interpolate({ inputRange: [0, 1], outputRange: [0.96, 1] }) },
+                        ],
+                      },
+                    ]}
+                  >
                     <Pressable style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}>
                       <Text style={styles.menuIcon}>♙</Text>
                       <Text style={styles.menuText}>Mi Perfil</Text>
@@ -71,7 +111,7 @@ export default function Index() {
                       <Text style={styles.menuIcon}>↪</Text>
                       <Text style={styles.menuText}>Cerrar Sesión</Text>
                     </Pressable>
-                  </View>
+                  </Animated.View>
                 )}
               </View>
             </View>
@@ -144,8 +184,11 @@ const styles = StyleSheet.create({
   profileButton: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4, paddingLeft: 4 },
   profilePressed: { opacity: 0.72 },
   avatar: { width: 43, height: 43, borderRadius: 22, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: '#A6D3E7', borderWidth: 2, borderColor: 'rgba(230, 251, 255, 0.8)', shadowColor: '#62DDF4', shadowOpacity: 0.45, shadowRadius: 12, elevation: 6 },
-  avatarHead: { color: '#F1F8FF', fontSize: 17, lineHeight: 17, marginTop: -5 },
-  avatarBody: { color: '#54758C', fontSize: 25, lineHeight: 22, marginTop: -1 },
+  avatarHair: { position: 'absolute', top: 5, width: 22, height: 17, borderRadius: 12, backgroundColor: '#41546C', zIndex: 2 },
+  avatarFace: { position: 'absolute', top: 9, width: 17, height: 19, borderRadius: 9, backgroundColor: '#F2C5A8', zIndex: 3 },
+  avatarNeck: { position: 'absolute', top: 25, width: 8, height: 8, backgroundColor: '#D99F82', zIndex: 2 },
+  avatarShoulders: { position: 'absolute', bottom: -8, width: 38, height: 25, borderRadius: 20, backgroundColor: '#506D89', zIndex: 1 },
+  avatarShirt: { position: 'absolute', top: 0, left: 13, width: 12, height: 19, borderRadius: 3, backgroundColor: '#DCEBF3', transform: [{ rotate: '12deg' }] },
   profileChevron: { color: '#D3F8FF', fontSize: 20, lineHeight: 20, width: 13, textAlign: 'center' },
   profileMenu: { position: 'absolute', top: 53, right: 0, width: 228, overflow: 'hidden', borderRadius: 7, borderWidth: 1, borderColor: 'rgba(155, 225, 248, 0.35)', backgroundColor: 'rgba(10, 32, 51, 0.97)', shadowColor: '#000000', shadowOpacity: 0.4, shadowRadius: 18, shadowOffset: { width: 0, height: 10 }, elevation: 12 },
   menuItem: { minHeight: 51, flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(164, 226, 245, 0.18)' },
