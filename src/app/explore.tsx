@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { isAuthenticated } from './auth-state';
+import { isAuthenticated, setAuthenticated } from './auth-state';
 
 const tournaments = [
   { game: '1. Valorant', name: 'CLUTCH MASTERS', description: 'Un mini descripción here for competitive play.', colors: ['#E44A61', '#7D334A'] },
@@ -57,7 +57,7 @@ export default function EsportsScreen() {
               <View style={styles.profileCard}>
                 <View style={styles.largeAvatar}><View style={styles.largeHair} /><View style={styles.largeFace} /><View style={styles.largeShoulders} /></View>
                 <View style={styles.profileCopy}><Text style={styles.profileLine}>♙  mi tournaments</Text><Text style={styles.profileLine}>♧  ver perfil⌄</Text></View>
-                <Pressable onPress={() => router.replace('/login')} style={({ pressed }) => [styles.logoutButton, pressed && styles.pressed]}><Text style={styles.logoutText}>Cerrar Sesión</Text></Pressable>
+                <Pressable onPress={() => { setAuthenticated(false); router.replace('/login'); }} style={({ pressed }) => [styles.logoutButton, pressed && styles.pressed]}><Text style={styles.logoutText}>Cerrar Sesión</Text></Pressable>
               </View>
               <View style={styles.registeredPanel}>
                 <Text style={styles.registeredTitle}>los torneos inscriptos</Text>

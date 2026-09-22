@@ -26,7 +26,8 @@ export default function AuthScreen({ mode }: { mode: AuthMode }) {
       router.replace('/');
       return;
     }
-    Alert.alert('Tu cuenta está lista', 'Aquí conectaremos la autenticación con tu backend cuando esté preparado.');
+    setAuthenticated(true);
+    router.replace('/');
   }
 
   return (
