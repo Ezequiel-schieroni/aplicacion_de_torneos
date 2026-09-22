@@ -121,7 +121,7 @@ export default function Index() {
 
           <View style={styles.options}>
             <EnvironmentCard href="/sports" icon="SPORTS" title="TORNEO DE" accent="DEPORTES" />
-            <EnvironmentCard href="/explore" icon="ESPORTS" title="TORNEO DE" accent="ESPORTS" />
+            <EnvironmentCard href="/esport" icon="ESPORTS" title="TORNEO DE" accent="ESPORTS" />
           </View>
         </View>
       </SafeAreaView>
@@ -129,7 +129,7 @@ export default function Index() {
   );
 }
 
-function EnvironmentCard({ href, icon, title, accent }: { href: '/sports' | '/explore'; icon: 'SPORTS' | 'ESPORTS'; title: string; accent: string }) {
+function EnvironmentCard({ href, icon, title, accent }: { href: '/sports' | '/esport'; icon: 'SPORTS' | 'ESPORTS'; title: string; accent: string }) {
   const [cardScale] = useState(() => new Animated.Value(1));
 
   function animateCard(toValue: number) {

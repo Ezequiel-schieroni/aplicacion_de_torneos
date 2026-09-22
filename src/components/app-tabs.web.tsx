@@ -7,7 +7,7 @@ export default function AppTabs() {
       <TabList style={{ display: 'none' }}>
         <TabTrigger name="index" href="/" />
         <TabTrigger name="login" href="/login" />
-        <TabTrigger name="explore" href="/explore" />
+        <TabTrigger name="esport" href="/esport" />
       </TabList>
     </Tabs>
   );
