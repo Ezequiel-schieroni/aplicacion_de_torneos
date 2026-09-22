@@ -1,7 +1,6 @@
+import { GlassView } from 'expo-glass-effect';
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { GlassView } from 'expo-glass-effect';
-import { Link } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type AuthMode = 'login' | 'signup';
@@ -56,7 +55,7 @@ export default function AuthScreen({ mode }: { mode: AuthMode }) {
               <View style={styles.dividerRow}><View style={styles.divider} /><Text style={styles.dividerText}>O ACCEDE CON</Text><View style={styles.divider} /></View>
               <Pressable accessibilityRole="button" onPress={() => Alert.alert('Google', 'Configuraremos este acceso junto con el backend.')} style={({ pressed }) => [styles.googleButton, pressed && styles.pressed]}><Text style={styles.googleG}>G</Text><Text style={styles.googleButtonText}>Continuar con Google</Text></Pressable>
             </GlassView>
-            <View style={styles.switchRow}><Text style={styles.switchText}>{isSignup ? '¿Ya eres parte de NEXUS?' : '¿Primera vez en la arena?'}</Text><Link href={isSignup ? '/login' : '/signup'} style={styles.switchAction}>{isSignup ? 'Inicia sesión' : 'Crea tu cuenta'}</Link></View>
+            <View style={styles.switchRow}><Text style={styles.switchText}>{isSignup ? '¿Ya eres parte de NEXUS?' : '¿Primera vez en la arena?'}</Text><link href={isSignup ? '/login' : '/signup'} style={styles.switchAction}>{isSignup ? 'Inicia sesión' : 'Crea tu cuenta'}</link></View>
             {isSignup && <Text style={styles.legal}>Al continuar aceptas los Términos de uso y la Política de privacidad.</Text>}
           </ScrollView>
         </KeyboardAvoidingView>
