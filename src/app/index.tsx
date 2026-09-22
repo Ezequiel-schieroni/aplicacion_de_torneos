@@ -120,7 +120,7 @@ export default function Index() {
           <Text style={styles.title}>Elegí tu entorno</Text>
 
           <View style={styles.options}>
-            <EnvironmentCard href="/explore" icon="SPORTS" title="TORNEO DE" accent="DEPORTES" />
+            <EnvironmentCard href="/sports" icon="SPORTS" title="TORNEO DE" accent="DEPORTES" />
             <EnvironmentCard href="/explore" icon="ESPORTS" title="TORNEO DE" accent="ESPORTS" />
           </View>
         </View>
@@ -129,7 +129,7 @@ export default function Index() {
   );
 }
 
-function EnvironmentCard({ href, icon, title, accent }: { href: '/explore'; icon: 'SPORTS' | 'ESPORTS'; title: string; accent: string }) {
+function EnvironmentCard({ href, icon, title, accent }: { href: '/sports' | '/explore'; icon: 'SPORTS' | 'ESPORTS'; title: string; accent: string }) {
   const [cardScale] = useState(() => new Animated.Value(1));
 
   function animateCard(toValue: number) {
