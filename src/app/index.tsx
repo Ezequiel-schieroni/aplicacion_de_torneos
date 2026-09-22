@@ -1,6 +1,6 @@
 import { Link, Redirect, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { isAuthenticated, setAuthenticated } from './auth-state';
@@ -90,17 +90,36 @@ export default function Index() {
 }
 
 function EnvironmentCard({ href, icon, title, accent }: { href: '/explore'; icon: 'SPORTS' | 'ESPORTS'; title: string; accent: string }) {
+  const [cardScale] = useState(() => new Animated.Value(1));
+
+  function animateCard(toValue: number) {
+    Animated.spring(cardScale, {
+      toValue,
+      useNativeDriver: true,
+      speed: 18,
+      bounciness: 5,
+    }).start();
+  }
+
   return (
     <Link href={href} asChild>
-      <Pressable style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
-        <View style={styles.cardInner}>
+      <Pressable
+        onHoverIn={() => animateCard(1.025)}
+        onHoverOut={() => animateCard(1)}
+        onPressIn={() => animateCard(0.98)}
+        onPressOut={() => animateCard(1)}
+        style={styles.card}
+      >
+        <Animated.View style={[styles.cardAnimated, { transform: [{ scale: cardScale }] }]}>
+          <View style={styles.cardInner}>
           <View style={styles.iconArea}>
             <Text style={styles.iconPrimary}>{icon === 'SPORTS' ? '⚽' : '⌁'}</Text>
             <Text style={styles.iconSecondary}>{icon === 'SPORTS' ? '◌' : '✦'}</Text>
           </View>
-          <Text style={styles.cardTitle}>{title}</Text>
-          <Text style={styles.cardAccent}>{accent}</Text>
-        </View>
+            <Text adjustsFontSizeToFit minimumFontScale={0.72} numberOfLines={1} style={styles.cardTitle}>{title}</Text>
+            <Text adjustsFontSizeToFit minimumFontScale={0.72} numberOfLines={1} style={styles.cardAccent}>{accent}</Text>
+          </View>
+        </Animated.View>
       </Pressable>
     </Link>
   );
@@ -135,15 +154,15 @@ const styles = StyleSheet.create({
   menuIcon: { width: 22, color: '#D8F5FF', fontSize: 23, textAlign: 'center' },
   menuText: { color: '#D8E6F0', fontSize: 18, fontWeight: '500' },
   title: { marginTop: 54, color: '#F6FBFF', textAlign: 'center', fontSize: 58, lineHeight: 66, fontWeight: '300', letterSpacing: -1.2 },
-  options: { flexDirection: 'row', justifyContent: 'center', gap: 64, marginTop: 42 },
-  card: { width: 348, height: 330, padding: 11, borderRadius: 39, borderWidth: 1, borderColor: 'rgba(123, 221, 255, 0.34)', backgroundColor: 'rgba(10, 29, 45, 0.5)', shadowColor: '#1C6379', shadowOpacity: 0.24, shadowRadius: 25, shadowOffset: { width: 0, height: 12 }, elevation: 8 },
-  cardInner: { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 29, borderWidth: 1, borderColor: 'rgba(156, 231, 255, 0.35)', backgroundColor: 'rgba(16, 35, 52, 0.76)' },
+  options: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 28, marginTop: 42 },
+  card: { width: 348, maxWidth: '100%', height: 330, padding: 11, borderRadius: 39, borderWidth: 1, borderColor: 'rgba(123, 221, 255, 0.34)', backgroundColor: 'rgba(10, 29, 45, 0.5)', shadowColor: '#1C6379', shadowOpacity: 0.24, shadowRadius: 25, shadowOffset: { width: 0, height: 12 }, elevation: 8, overflow: 'hidden' },
+  cardAnimated: { flex: 1 },
+  cardInner: { flex: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 29, borderWidth: 1, borderColor: 'rgba(156, 231, 255, 0.35)', backgroundColor: 'rgba(16, 35, 52, 0.76)', paddingHorizontal: 12 },
   iconArea: { height: 132, width: 170, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 4, marginBottom: 5 },
   iconPrimary: { color: '#A1C6DD', fontSize: 77, textShadowColor: '#8FD7F3', textShadowRadius: 18 },
   iconSecondary: { color: '#91B9D2', fontSize: 48, marginTop: 48, marginLeft: -17, textShadowColor: '#8FD7F3', textShadowRadius: 15 },
-  cardTitle: { color: '#F4FAFF', fontSize: 32, lineHeight: 36, fontStyle: 'italic', fontWeight: '300', letterSpacing: -0.5 },
-  cardAccent: { color: '#F4FAFF', fontSize: 36, lineHeight: 39, fontStyle: 'italic', fontWeight: '900', letterSpacing: -0.5 },
-  cardPressed: { opacity: 0.78, transform: [{ scale: 0.98 }] },
+  cardTitle: { width: '100%', color: '#F4FAFF', fontSize: 32, lineHeight: 36, textAlign: 'center', fontStyle: 'italic', fontWeight: '300', letterSpacing: -0.5, flexShrink: 1 },
+  cardAccent: { width: '100%', color: '#F4FAFF', fontSize: 36, lineHeight: 39, textAlign: 'center', fontStyle: 'italic', fontWeight: '900', letterSpacing: -0.5, flexShrink: 1 },
   orb: { position: 'absolute', borderRadius: 999 },
   purpleOrb: { width: 350, height: 350, left: -210, bottom: 65, backgroundColor: '#321679', opacity: 0.9 },
   cyanOrb: { width: 390, height: 390, right: -145, top: -96, backgroundColor: '#07586A', opacity: 0.88 },
