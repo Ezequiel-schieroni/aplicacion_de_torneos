@@ -41,7 +41,6 @@ export default function EsportsScreen() {
               <View><Text style={styles.brandName}>NEXUS</Text><Text style={styles.brandCaption}>TOURNAMENTS</Text></View>
             </Pressable>
             <View style={styles.liveBadge}><View style={styles.liveDot} /><Text style={styles.liveText}>LIVE</Text></View>
-            <View style={styles.headerAvatar}><View style={styles.avatarHair} /><View style={styles.avatarFace} /><View style={styles.avatarShoulders} /><Text style={styles.headerChevron}>⌄</Text></View>
           </View>
 
           <View style={styles.layout}>
