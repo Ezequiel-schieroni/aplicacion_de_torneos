@@ -16,6 +16,18 @@ import { isAuthenticated, setAuthenticated } from './auth-state';
 
 type EventKind = 'Torneo' | 'Partido';
 
+type Court = {
+  id: string;
+  name: string;
+  sport: string;
+  location: string;
+  surface: string;
+  dimensions: string;
+  lighting: string;
+  capacity: string;
+  amenities: string;
+};
+
 type SportEvent = {
   id: number;
   kind: EventKind;
@@ -28,12 +40,28 @@ type SportEvent = {
   teams?: string;
   description: string;
   isRegistered?: boolean;
+  createdBy: 'admin';
 };
 
 const sportsList = ['Todos', 'Fútbol', 'Rugby', 'Tenis', 'Pádel', 'Básquet'];
 const sportsOptions = ['Fútbol', 'Rugby', 'Tenis', 'Pádel', 'Básquet'];
-const venues = ['Cancha 1 - Norte', 'Cancha 2 - Central', 'Cancha Techada', 'Predio Sur'];
-const times = ['09:00', '11:00', '14:00', '16:00', '18:00', '20:00'];
+const courts: Court[] = [
+  { id: 'futbol-1', name: 'Fútbol 11 Norte', sport: 'Fútbol', location: 'Predio Norte', surface: 'Césped sintético FIFA', dimensions: '105 x 68 m', lighting: '8 torres LED', capacity: '300 personas', amenities: 'Vestuario, duchas y estacionamiento' },
+  { id: 'futbol-2', name: 'Fútbol 5 Central', sport: 'Fútbol', location: 'Complejo Central', surface: 'Césped sintético premium', dimensions: '40 x 20 m', lighting: 'Iluminación LED', capacity: '80 personas', amenities: 'Quincho, vestuario y buffet' },
+  { id: 'futbol-3', name: 'Fútbol 5 Sur', sport: 'Fútbol', location: 'Predio Sur', surface: 'Caucho deportivo', dimensions: '40 x 20 m', lighting: 'Iluminación LED', capacity: '60 personas', amenities: 'Vestuario y parrillas' },
+  { id: 'rugby-1', name: 'Rugby Arena', sport: 'Rugby', location: 'Predio Sur', surface: 'Césped natural', dimensions: '100 x 70 m', lighting: '6 torres LED', capacity: '500 personas', amenities: 'Tribuna, vestuarios y tercer tiempo' },
+  { id: 'rugby-2', name: 'Rugby Training', sport: 'Rugby', location: 'Campo Oeste', surface: 'Césped natural', dimensions: '70 x 50 m', lighting: 'Iluminación perimetral', capacity: '120 personas', amenities: 'Vestuarios y zona de calentamiento' },
+  { id: 'padel-1', name: 'Pádel Panorámica 1', sport: 'Pádel', location: 'Nave Indoor', surface: 'Césped artificial Mondo', dimensions: '20 x 10 m', lighting: 'Focos LED sin sombras', capacity: '30 personas', amenities: 'Cristal panorámico y marcador' },
+  { id: 'padel-2', name: 'Pádel Panorámica 2', sport: 'Pádel', location: 'Nave Indoor', surface: 'Césped artificial Mondo', dimensions: '20 x 10 m', lighting: 'Focos LED sin sombras', capacity: '30 personas', amenities: 'Cristal panorámico y bancos' },
+  { id: 'padel-3', name: 'Pádel Outdoor', sport: 'Pádel', location: 'Terraza Este', surface: 'Césped artificial', dimensions: '20 x 10 m', lighting: 'Iluminación LED', capacity: '24 personas', amenities: 'Zona de descanso y paletero' },
+  { id: 'tenis-1', name: 'Tenis Central', sport: 'Tenis', location: 'Complejo Central', surface: 'Polvo de ladrillo', dimensions: '23.77 x 10.97 m', lighting: 'Torres LED', capacity: '80 personas', amenities: 'Gradas, vestuario y juez de silla' },
+  { id: 'tenis-2', name: 'Tenis Rápida', sport: 'Tenis', location: 'Nave Indoor', surface: 'Cemento acrílico', dimensions: '23.77 x 10.97 m', lighting: 'Iluminación indoor', capacity: '50 personas', amenities: 'Aire acondicionado y marcador' },
+  { id: 'tenis-3', name: 'Tenis Sur', sport: 'Tenis', location: 'Predio Sur', surface: 'Polvo de ladrillo', dimensions: '23.77 x 10.97 m', lighting: 'Iluminación LED', capacity: '50 personas', amenities: 'Bancos y bebedero' },
+  { id: 'basquet-1', name: 'Básquet Techada', sport: 'Básquet', location: 'Pabellón Norte', surface: 'Parquet deportivo', dimensions: '28 x 15 m', lighting: 'Iluminación indoor', capacity: '250 personas', amenities: 'Gradas, vestuarios y tablero electrónico' },
+  { id: 'basquet-2', name: 'Básquet 3x3', sport: 'Básquet', location: 'Pista Urbana', surface: 'Caucho deportivo', dimensions: '15 x 11 m', lighting: 'Torres LED', capacity: '100 personas', amenities: 'Gradas y zona de hidratación' },
+];
+const venues = courts.map((court) => court.name);
+const times = ['18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
 const formats = ['Amistoso', 'Liga', 'Eliminación directa', 'Fase de grupos'];
 
 const initialEvents: SportEvent[] = [
@@ -42,73 +70,79 @@ const initialEvents: SportEvent[] = [
     kind: 'Torneo',
     name: 'CLUTCH MASTERS',
     sport: 'Fútbol',
-    venue: 'Cancha 1 - Norte',
+    venue: 'Fútbol 5 Central',
     date: '18 de octubre de 2026',
     time: '18:00',
     format: 'Eliminación directa',
     description: 'Torneo relámpago Fútbol 5 competitivo con premios.',
     isRegistered: true,
+    createdBy: 'admin',
   },
   {
     id: 2,
     kind: 'Torneo',
     name: 'LA GRIETA INVOCADA',
     sport: 'Rugby',
-    venue: 'Predio Sur',
+    venue: 'Rugby Arena',
     date: '20 de octubre de 2026',
-    time: '16:00',
+    time: '19:00',
     format: 'Fase de grupos',
     description: 'Torneo de Seven con tercer tiempo e inscripciones abiertas.',
     isRegistered: true,
+    createdBy: 'admin',
   },
   {
     id: 3,
     kind: 'Torneo',
     name: 'BOOSTED CUP',
     sport: 'Tenis',
-    venue: 'Cancha Techada',
+    venue: 'Tenis Central',
     date: '22 de octubre de 2026',
-    time: '14:00',
+    time: '20:00',
     format: 'Eliminación directa',
     description: 'Singles masculino y femenino categoría A y B.',
     isRegistered: false,
+    createdBy: 'admin',
   },
   {
     id: 4,
     kind: 'Torneo',
     name: 'CAMPEONATO DIGITAL',
     sport: 'Pádel',
-    venue: 'Cancha 2 - Central',
+    venue: 'Pádel Panorámica 1',
     date: '25 de octubre de 2026',
     time: '20:00',
     format: 'Fase de grupos',
     description: 'Parejas de pádel en cancha sintética con iluminación LED.',
     isRegistered: true,
+    createdBy: 'admin',
   },
   {
     id: 5,
     kind: 'Partido',
     name: 'FRAG FEST',
     sport: 'Fútbol',
-    venue: 'Cancha 1 - Norte',
+    venue: 'Fútbol 11 Norte',
     date: '18 de octubre de 2026',
     time: '20:00',
     format: 'Amistoso',
     teams: 'Los Magos vs San Martín',
     description: 'Partido nocturno Fútbol 11 amistoso.',
     isRegistered: false,
+    createdBy: 'admin',
   },
   {
     id: 6,
     kind: 'Torneo',
     name: 'BATALLA CAMPAL',
     sport: 'Básquet',
-    venue: 'Cancha Techada',
+    venue: 'Básquet Techada',
     date: '28 de octubre de 2026',
-    time: '11:00',
+    time: '21:00',
     format: 'Liga',
     description: 'Torneo 3x3 urbano cancha cubierta.',
     isRegistered: false,
+    createdBy: 'admin',
   },
 ];
 
@@ -131,6 +165,7 @@ export default function SportsScreen() {
   const [teamA, setTeamA] = useState('');
   const [teamB, setTeamB] = useState('');
   const [description, setDescription] = useState('');
+  const [editingEventId, setEditingEventId] = useState<number | null>(null);
 
   // Estado para la modal de coincidencia de fecha/cancha
   const [coincidingEvent, setCoincidingEvent] = useState<SportEvent | null>(null);
@@ -148,7 +183,13 @@ export default function SportsScreen() {
       ? events
       : events.filter((e) => e.sport.toLowerCase() === selectedSport.toLowerCase());
 
+  const visibleCourts = sport ? courts.filter((court) => court.sport === sport) : courts;
+  const catalogCourts = selectedSport === 'Todos'
+    ? courts
+    : courts.filter((court) => court.sport === selectedSport);
+
   function openCreator(nextKind: EventKind) {
+    setEditingEventId(null);
     setKind(nextKind);
     setName('');
     setSport(sportsOptions[0]);
@@ -159,6 +200,22 @@ export default function SportsScreen() {
     setTeamA('');
     setTeamB('');
     setDescription('');
+    setIsCreatorOpen(true);
+  }
+
+  function openEditor(event: SportEvent) {
+    setEditingEventId(event.id);
+    setKind(event.kind);
+    setName(event.name);
+    setSport(event.sport);
+    setVenue(event.venue);
+    setDate(event.date);
+    setTime(event.time);
+    setFormat(event.format);
+    const teams = event.teams?.split(' vs ') ?? ['', ''];
+    setTeamA(teams[0]);
+    setTeamB(teams[1] ?? '');
+    setDescription(event.description);
     setIsCreatorOpen(true);
   }
 
@@ -175,6 +232,7 @@ export default function SportsScreen() {
     // Comprobación de coincidencia por fecha, hora y cancha
     const match = events.find(
       (e) =>
+        e.id !== editingEventId &&
         e.date.trim().toLowerCase() === date.trim().toLowerCase() &&
         e.time === time &&
         e.venue === venue
@@ -185,10 +243,10 @@ export default function SportsScreen() {
       return;
     }
 
-    saveNewEvent();
+    saveEvent();
   }
 
-  function saveNewEvent() {
+  function saveEvent() {
     const newEvent: SportEvent = {
       id: Date.now(),
       kind,
@@ -201,11 +259,26 @@ export default function SportsScreen() {
       teams: kind === 'Partido' ? `${teamA.trim()} vs ${teamB.trim()}` : undefined,
       description: description.trim() || `Competencia de ${sport} (${format}).`,
       isRegistered: true,
+      createdBy: 'admin',
     };
 
-    setEvents((prev) => [newEvent, ...prev]);
+    setEvents((prev) => editingEventId === null
+      ? [newEvent, ...prev]
+      : prev.map((event) => event.id === editingEventId ? { ...newEvent, id: editingEventId, isRegistered: event.isRegistered } : event));
     setIsCreatorOpen(false);
     setCoincidingEvent(null);
+    setEditingEventId(null);
+  }
+
+  function deleteEvent(event: SportEvent) {
+    Alert.alert('Eliminar torneo', `¿Querés eliminar ${event.name}?`, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: () => setEvents((prev) => prev.filter((item) => item.id !== event.id)),
+      },
+    ]);
   }
 
   function toggleRegister(id: number) {
@@ -338,6 +411,35 @@ export default function SportsScreen() {
                 </ScrollView>
               </View>
 
+              <View style={styles.courtsSection}>
+                <View style={styles.courtsSectionHeader}>
+                  <View>
+                    <Text style={styles.courtsEyebrow}>INSTALACIONES DISPONIBLES</Text>
+                    <Text style={styles.courtsTitle}>Canchas y predios</Text>
+                  </View>
+                  <Text style={styles.courtsCount}>{catalogCourts.length} espacios</Text>
+                </View>
+                <View style={styles.courtsGrid}>
+                  {catalogCourts.map((court) => (
+                    <View key={court.id} style={styles.courtCard}>
+                      <View style={styles.courtCardTop}>
+                        <Text style={styles.courtSport}>{court.sport.toUpperCase()}</Text>
+                        <View style={styles.litBadge}><View style={styles.litDot} /><Text style={styles.litText}>NOCTURNA</Text></View>
+                      </View>
+                      <Text style={styles.courtName}>{court.name}</Text>
+                      <Text style={styles.courtLocation}>⌖ {court.location}</Text>
+                      <View style={styles.courtDetails}>
+                        <Text style={styles.courtDetail}>Superficie: {court.surface}</Text>
+                        <Text style={styles.courtDetail}>Medidas: {court.dimensions}</Text>
+                        <Text style={styles.courtDetail}>Capacidad: {court.capacity}</Text>
+                        <Text style={styles.courtDetail}>Servicios: {court.amenities}</Text>
+                      </View>
+                      <Text style={styles.courtLighting}>◷ {court.lighting}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+
               {/* REJILLA / GRID DE TORNEOS DISPONIBLES */}
               {filteredEvents.length === 0 ? (
                 <View style={styles.emptyContainer}>
@@ -356,12 +458,24 @@ export default function SportsScreen() {
                       <Text style={styles.cardDescription} numberOfLines={2}>
                         {evt.description}
                       </Text>
+                      <Text style={styles.cardMeta} numberOfLines={1}>📍 {evt.venue}</Text>
+                      <Text style={styles.cardMeta} numberOfLines={1}>◷ {evt.date} · {evt.time} hs</Text>
 
                       <View style={styles.cardFooter}>
                         <View style={styles.cardIconsRow}>
                           <Text style={styles.miniIcon}>🏆</Text>
                           <Text style={styles.miniIcon}>⚽</Text>
                         </View>
+                        {evt.createdBy === 'admin' && (
+                          <View style={styles.adminActions}>
+                            <Pressable accessibilityLabel={`Editar ${evt.name}`} onPress={() => openEditor(evt)} style={styles.adminActionButton}>
+                              <Text style={styles.editActionText}>Editar</Text>
+                            </Pressable>
+                            <Pressable accessibilityLabel={`Eliminar ${evt.name}`} onPress={() => deleteEvent(evt)} style={styles.adminActionButton}>
+                              <Text style={styles.deleteActionText}>Eliminar</Text>
+                            </Pressable>
+                          </View>
+                        )}
                         <Pressable
                           accessibilityRole="button"
                           onPress={() => toggleRegister(evt.id)}
@@ -390,7 +504,7 @@ export default function SportsScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Crear nuevo {kind.toLowerCase()}</Text>
+              <Text style={styles.modalTitle}>{editingEventId === null ? 'Crear nuevo' : 'Editar'} {kind.toLowerCase()}</Text>
               <Pressable accessibilityRole="button" onPress={() => setIsCreatorOpen(false)} style={styles.closeModalBtn}>
                 <Text style={styles.closeModalText}>✕</Text>
               </Pressable>
@@ -412,7 +526,10 @@ export default function SportsScreen() {
                   <Pressable
                     key={s}
                     accessibilityRole="button"
-                    onPress={() => setSport(s)}
+                    onPress={() => {
+                      setSport(s);
+                      setVenue(courts.find((court) => court.sport === s)?.name ?? venues[0]);
+                    }}
                     style={[styles.optionPill, sport === s && styles.optionPillActive]}
                   >
                     <Text style={[styles.optionPillText, sport === s && styles.optionPillTextActive]}>{s}</Text>
@@ -422,14 +539,14 @@ export default function SportsScreen() {
 
               <Text style={styles.inputLabel}>Cancha / Predio</Text>
               <View style={styles.optionsRow}>
-                {venues.map((v) => (
+                {visibleCourts.map((court) => (
                   <Pressable
-                    key={v}
+                    key={court.id}
                     accessibilityRole="button"
-                    onPress={() => setVenue(v)}
-                    style={[styles.optionPill, venue === v && styles.optionPillActive]}
+                    onPress={() => setVenue(court.name)}
+                    style={[styles.optionPill, venue === court.name && styles.optionPillActive]}
                   >
-                    <Text style={[styles.optionPillText, venue === v && styles.optionPillTextActive]}>{v}</Text>
+                    <Text style={[styles.optionPillText, venue === court.name && styles.optionPillTextActive]}>{court.name}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -508,7 +625,7 @@ export default function SportsScreen() {
               onPress={handleCreateEvent}
               style={({ pressed }) => [styles.submitModalBtn, pressed && styles.pressed]}
             >
-              <Text style={styles.submitModalBtnText}>Confirmar y Crear {kind}</Text>
+              <Text style={styles.submitModalBtnText}>{editingEventId === null ? `Confirmar y Crear ${kind}` : 'Guardar cambios'}</Text>
             </Pressable>
           </View>
         </View>
@@ -564,7 +681,7 @@ export default function SportsScreen() {
               <Pressable
                 accessibilityRole="button"
                 onPress={() => {
-                  saveNewEvent();
+                    saveEvent();
                 }}
                 style={({ pressed }) => [styles.coincidenceBtnForce, pressed && styles.pressed]}
               >
@@ -733,6 +850,31 @@ const styles = StyleSheet.create({
   filterChipText: { color: '#88A3B8', fontSize: 12, fontWeight: '700' },
   filterChipTextSelected: { color: '#060B11', fontWeight: '900' },
 
+  courtsSection: {
+    marginBottom: 22,
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: '#081522',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 242, 254, 0.16)',
+  },
+  courtsSectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 12, gap: 10 },
+  courtsEyebrow: { color: '#00F2FE', fontSize: 9, fontWeight: '900', letterSpacing: 1.2 },
+  courtsTitle: { color: '#FFFFFF', fontSize: 20, fontWeight: '900', marginTop: 3 },
+  courtsCount: { color: '#6F8FA5', fontSize: 11, fontWeight: '800' },
+  courtsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  courtCard: { flexGrow: 1, flexBasis: 215, minWidth: 200, padding: 12, borderRadius: 10, backgroundColor: '#0D2030', borderWidth: 1, borderColor: 'rgba(139, 226, 245, 0.14)' },
+  courtCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 6 },
+  courtSport: { color: '#7FADBF', fontSize: 9, fontWeight: '900', letterSpacing: 1 },
+  litBadge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  litDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: '#00FFA3' },
+  litText: { color: '#76DDB8', fontSize: 8, fontWeight: '900' },
+  courtName: { color: '#F4FBFF', fontSize: 15, fontWeight: '900', marginTop: 8 },
+  courtLocation: { color: '#8EAABD', fontSize: 10, marginTop: 3 },
+  courtDetails: { marginTop: 9, gap: 3 },
+  courtDetail: { color: '#B6C9D5', fontSize: 10, lineHeight: 13 },
+  courtLighting: { color: '#00D9DE', fontSize: 10, fontWeight: '800', marginTop: 9 },
+
   // Grid
   gridContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   tournamentCard: {
@@ -748,9 +890,14 @@ const styles = StyleSheet.create({
   cardHeaderNum: { color: '#62829A', fontSize: 10, fontWeight: '700', marginBottom: 4 },
   cardTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '900', marginBottom: 6 },
   cardDescription: { color: '#7E97AD', fontSize: 11, lineHeight: 15, marginBottom: 14 },
+  cardMeta: { color: '#86A9BA', fontSize: 10, marginBottom: 3 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardIconsRow: { flexDirection: 'row', gap: 4 },
   miniIcon: { fontSize: 12 },
+  adminActions: { flexDirection: 'row', gap: 5, flex: 1, justifyContent: 'flex-end' },
+  adminActionButton: { paddingHorizontal: 5, paddingVertical: 4 },
+  editActionText: { color: '#00F2FE', fontSize: 9, fontWeight: '900' },
+  deleteActionText: { color: '#FF8297', fontSize: 9, fontWeight: '900' },
   joinBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
