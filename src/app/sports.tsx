@@ -64,87 +64,7 @@ const venues = courts.map((court) => court.name);
 const times = ['18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
 const formats = ['Amistoso', 'Liga', 'Eliminación directa', 'Fase de grupos'];
 
-const initialEvents: SportEvent[] = [
-  {
-    id: 1,
-    kind: 'Torneo',
-    name: 'CLUTCH MASTERS',
-    sport: 'Fútbol',
-    venue: 'Fútbol 5 Central',
-    date: '18 de octubre de 2026',
-    time: '18:00',
-    format: 'Eliminación directa',
-    description: 'Torneo relámpago Fútbol 5 competitivo con premios.',
-    isRegistered: true,
-    createdBy: 'admin',
-  },
-  {
-    id: 2,
-    kind: 'Torneo',
-    name: 'LA GRIETA INVOCADA',
-    sport: 'Rugby',
-    venue: 'Rugby Arena',
-    date: '20 de octubre de 2026',
-    time: '19:00',
-    format: 'Fase de grupos',
-    description: 'Torneo de Seven con tercer tiempo e inscripciones abiertas.',
-    isRegistered: true,
-    createdBy: 'admin',
-  },
-  {
-    id: 3,
-    kind: 'Torneo',
-    name: 'BOOSTED CUP',
-    sport: 'Tenis',
-    venue: 'Tenis Central',
-    date: '22 de octubre de 2026',
-    time: '20:00',
-    format: 'Eliminación directa',
-    description: 'Singles masculino y femenino categoría A y B.',
-    isRegistered: false,
-    createdBy: 'admin',
-  },
-  {
-    id: 4,
-    kind: 'Torneo',
-    name: 'CAMPEONATO DIGITAL',
-    sport: 'Pádel',
-    venue: 'Pádel Panorámica 1',
-    date: '25 de octubre de 2026',
-    time: '20:00',
-    format: 'Fase de grupos',
-    description: 'Parejas de pádel en cancha sintética con iluminación LED.',
-    isRegistered: true,
-    createdBy: 'admin',
-  },
-  {
-    id: 5,
-    kind: 'Partido',
-    name: 'FRAG FEST',
-    sport: 'Fútbol',
-    venue: 'Fútbol 11 Norte',
-    date: '18 de octubre de 2026',
-    time: '20:00',
-    format: 'Amistoso',
-    teams: 'Los Magos vs San Martín',
-    description: 'Partido nocturno Fútbol 11 amistoso.',
-    isRegistered: false,
-    createdBy: 'admin',
-  },
-  {
-    id: 6,
-    kind: 'Torneo',
-    name: 'BATALLA CAMPAL',
-    sport: 'Básquet',
-    venue: 'Básquet Techada',
-    date: '28 de octubre de 2026',
-    time: '21:00',
-    format: 'Liga',
-    description: 'Torneo 3x3 urbano cancha cubierta.',
-    isRegistered: false,
-    createdBy: 'admin',
-  },
-];
+const initialEvents: SportEvent[] = [];
 
 export default function SportsScreen() {
   const router = useRouter();
@@ -152,6 +72,7 @@ export default function SportsScreen() {
   // Estados principales
   const [events, setEvents] = useState<SportEvent[]>(initialEvents);
   const [selectedSport, setSelectedSport] = useState('Todos');
+  const [enteredCourts, setEnteredCourts] = useState<string[]>([]);
 
   // Estado del modal de creación
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
@@ -166,6 +87,7 @@ export default function SportsScreen() {
   const [teamB, setTeamB] = useState('');
   const [description, setDescription] = useState('');
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<SportEvent | null>(null);
 
   // Estado para la modal de coincidencia de fecha/cancha
   const [coincidingEvent, setCoincidingEvent] = useState<SportEvent | null>(null);
@@ -176,6 +98,7 @@ export default function SportsScreen() {
 
   // Torneos inscriptos para la barra lateral
   const registeredEvents = events.filter((e) => e.isRegistered);
+  const enteredCourtItems = courts.filter((court) => enteredCourts.includes(court.id));
 
   // Filtrado de eventos por deporte
   const filteredEvents =
@@ -271,19 +194,19 @@ export default function SportsScreen() {
   }
 
   function deleteEvent(event: SportEvent) {
-    Alert.alert('Eliminar torneo', `¿Querés eliminar ${event.name}?`, [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Eliminar',
-        style: 'destructive',
-        onPress: () => setEvents((prev) => prev.filter((item) => item.id !== event.id)),
-      },
-    ]);
+    setEvents((prev) => prev.filter((item) => item.id !== event.id));
+    setSelectedEvent(null);
   }
 
   function toggleRegister(id: number) {
     setEvents((prev) =>
       prev.map((e) => (e.id === id ? { ...e, isRegistered: !e.isRegistered } : e))
+    );
+  }
+
+  function toggleCourtEntry(id: string) {
+    setEnteredCourts((current) =>
+      current.includes(id) ? current.filter((courtId) => courtId !== id) : [...current, id]
     );
   }
 
@@ -344,23 +267,39 @@ export default function SportsScreen() {
               {/* Lista "Los torneos inscriptos" */}
               <View style={styles.enrolledCard}>
                 <Text style={styles.enrolledTitle}>los torneos inscriptos</Text>
-                {registeredEvents.length === 0 ? (
+                {registeredEvents.length === 0 && enteredCourtItems.length === 0 ? (
                   <Text style={styles.noEnrolledText}>No estás inscripto en ningún torneo aún.</Text>
                 ) : (
-                  registeredEvents.map((item) => (
-                    <View key={item.id} style={styles.enrolledItem}>
-                      <Text style={styles.enrolledIcon}>📅</Text>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.enrolledItemName} numberOfLines={1}>
-                          {item.name}
-                        </Text>
-                        <Text style={styles.enrolledItemSub} numberOfLines={1}>
-                          {item.sport} - {item.venue}
-                        </Text>
+                  <>
+                    {registeredEvents.map((item) => (
+                      <View key={item.id} style={styles.enrolledItem}>
+                        <Text style={styles.enrolledIcon}>📅</Text>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.enrolledItemName} numberOfLines={1}>
+                            {item.name}
+                          </Text>
+                          <Text style={styles.enrolledItemSub} numberOfLines={1}>
+                            {item.sport} - {item.venue}
+                          </Text>
+                        </View>
+                        <View style={styles.statusDotActive} />
                       </View>
-                      <View style={styles.statusDotActive} />
-                    </View>
-                  ))
+                    ))}
+                    {enteredCourtItems.map((court) => (
+                      <View key={court.id} style={styles.enrolledItem}>
+                        <Text style={styles.enrolledIcon}>📍</Text>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.enrolledItemName} numberOfLines={1}>
+                            {court.name}
+                          </Text>
+                          <Text style={styles.enrolledItemSub} numberOfLines={1}>
+                            {court.sport} - {court.location}
+                          </Text>
+                        </View>
+                        <View style={styles.statusDotActive} />
+                      </View>
+                    ))}
+                  </>
                 )}
               </View>
             </View>
@@ -435,6 +374,23 @@ export default function SportsScreen() {
                         <Text style={styles.courtDetail}>Servicios: {court.amenities}</Text>
                       </View>
                       <Text style={styles.courtLighting}>◷ {court.lighting}</Text>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`${enteredCourts.includes(court.id) ? 'Salir de' : 'Entrar a'} ${court.name}`}
+                        onPress={() => toggleCourtEntry(court.id)}
+                        style={({ pressed }) => [
+                          styles.courtEntryButton,
+                          enteredCourts.includes(court.id) && styles.courtEntryButtonActive,
+                          pressed && styles.pressed,
+                        ]}
+                      >
+                        <Text style={[
+                          styles.courtEntryButtonText,
+                          enteredCourts.includes(court.id) && styles.courtEntryButtonTextActive,
+                        ]}>
+                          {enteredCourts.includes(court.id) ? 'Salir' : 'Entrar'}
+                        </Text>
+                      </Pressable>
                     </View>
                   ))}
                 </View>
@@ -460,6 +416,13 @@ export default function SportsScreen() {
                       </Text>
                       <Text style={styles.cardMeta} numberOfLines={1}>📍 {evt.venue}</Text>
                       <Text style={styles.cardMeta} numberOfLines={1}>◷ {evt.date} · {evt.time} hs</Text>
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={() => setSelectedEvent(evt)}
+                        style={styles.detailsButton}
+                      >
+                        <Text style={styles.detailsButtonText}>Ver detalles y descripción</Text>
+                      </Pressable>
 
                       <View style={styles.cardFooter}>
                         <View style={styles.cardIconsRow}>
@@ -468,10 +431,10 @@ export default function SportsScreen() {
                         </View>
                         {evt.createdBy === 'admin' && (
                           <View style={styles.adminActions}>
-                            <Pressable accessibilityLabel={`Editar ${evt.name}`} onPress={() => openEditor(evt)} style={styles.adminActionButton}>
+                            <Pressable accessibilityRole="button" accessibilityLabel={`Editar ${evt.name}`} onPress={() => openEditor(evt)} style={({ pressed }) => [styles.adminActionButton, styles.editAdminButton, pressed && styles.pressed]}>
                               <Text style={styles.editActionText}>Editar</Text>
                             </Pressable>
-                            <Pressable accessibilityLabel={`Eliminar ${evt.name}`} onPress={() => deleteEvent(evt)} style={styles.adminActionButton}>
+                            <Pressable accessibilityRole="button" accessibilityLabel={`Eliminar ${evt.name}`} onPress={() => deleteEvent(evt)} style={({ pressed }) => [styles.adminActionButton, styles.deleteAdminButton, pressed && styles.pressed]}>
                               <Text style={styles.deleteActionText}>Eliminar</Text>
                             </Pressable>
                           </View>
@@ -485,7 +448,7 @@ export default function SportsScreen() {
                           ]}
                         >
                           <Text style={[styles.joinBtnText, evt.isRegistered && styles.joinBtnTextActive]}>
-                            {evt.isRegistered ? 'Inscripto ✓' : 'Inscribirse'}
+                            {evt.isRegistered ? 'Salir' : 'Entrar'}
                           </Text>
                         </Pressable>
                       </View>
@@ -627,6 +590,43 @@ export default function SportsScreen() {
             >
               <Text style={styles.submitModalBtnText}>{editingEventId === null ? `Confirmar y Crear ${kind}` : 'Guardar cambios'}</Text>
             </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={selectedEvent !== null} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View style={styles.detailHeading}>
+                <Text style={styles.detailSport}>{selectedEvent?.kind.toUpperCase()} · {selectedEvent?.sport.toUpperCase()}</Text>
+                <Text style={styles.modalTitle}>{selectedEvent?.name}</Text>
+              </View>
+              <Pressable accessibilityRole="button" onPress={() => setSelectedEvent(null)} style={styles.closeModalBtn}>
+                <Text style={styles.closeModalText}>✕</Text>
+              </Pressable>
+            </View>
+
+            {selectedEvent && (
+              <View style={styles.detailBody}>
+                <Text style={styles.detailLabel}>DESCRIPCIÓN</Text>
+                <Text style={styles.detailDescription}>{selectedEvent.description}</Text>
+                {selectedEvent.teams && <Text style={styles.detailTeams}>{selectedEvent.teams}</Text>}
+                <View style={styles.detailGrid}>
+                  <View style={styles.detailItem}><Text style={styles.detailLabel}>CANCHA</Text><Text style={styles.detailValue}>{selectedEvent.venue}</Text></View>
+                  <View style={styles.detailItem}><Text style={styles.detailLabel}>FECHA Y HORA</Text><Text style={styles.detailValue}>{selectedEvent.date} · {selectedEvent.time} hs</Text></View>
+                  <View style={styles.detailItem}><Text style={styles.detailLabel}>FORMATO</Text><Text style={styles.detailValue}>{selectedEvent.format}</Text></View>
+                </View>
+                <View style={styles.detailActions}>
+                  <Pressable accessibilityRole="button" onPress={() => { setSelectedEvent(null); openEditor(selectedEvent); }} style={styles.detailEditButton}>
+                    <Text style={styles.detailEditText}>Editar</Text>
+                  </Pressable>
+                  <Pressable accessibilityRole="button" onPress={() => deleteEvent(selectedEvent)} style={styles.detailDeleteButton}>
+                    <Text style={styles.detailDeleteText}>Eliminar</Text>
+                  </Pressable>
+                </View>
+              </View>
+            )}
           </View>
         </View>
       </Modal>
@@ -874,6 +874,10 @@ const styles = StyleSheet.create({
   courtDetails: { marginTop: 9, gap: 3 },
   courtDetail: { color: '#B6C9D5', fontSize: 10, lineHeight: 13 },
   courtLighting: { color: '#00D9DE', fontSize: 10, fontWeight: '800', marginTop: 9 },
+  courtEntryButton: { alignSelf: 'flex-start', marginTop: 12, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 14, backgroundColor: '#00F2FE' },
+  courtEntryButtonActive: { backgroundColor: 'rgba(0, 255, 163, 0.2)', borderWidth: 1, borderColor: '#00FFA3' },
+  courtEntryButtonText: { color: '#060B11', fontSize: 11, fontWeight: '900' },
+  courtEntryButtonTextActive: { color: '#00FFA3' },
 
   // Grid
   gridContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
@@ -891,11 +895,15 @@ const styles = StyleSheet.create({
   cardTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '900', marginBottom: 6 },
   cardDescription: { color: '#7E97AD', fontSize: 11, lineHeight: 15, marginBottom: 14 },
   cardMeta: { color: '#86A9BA', fontSize: 10, marginBottom: 3 },
+  detailsButton: { alignSelf: 'flex-start', marginTop: 7, marginBottom: 8, paddingVertical: 3 },
+  detailsButtonText: { color: '#00F2FE', fontSize: 10, fontWeight: '900' },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardIconsRow: { flexDirection: 'row', gap: 4 },
   miniIcon: { fontSize: 12 },
   adminActions: { flexDirection: 'row', gap: 5, flex: 1, justifyContent: 'flex-end' },
-  adminActionButton: { paddingHorizontal: 5, paddingVertical: 4 },
+  adminActionButton: { minWidth: 54, paddingHorizontal: 7, paddingVertical: 6, borderRadius: 6, alignItems: 'center', zIndex: 2 },
+  editAdminButton: { backgroundColor: 'rgba(0, 242, 254, 0.14)', borderWidth: 1, borderColor: 'rgba(0, 242, 254, 0.48)' },
+  deleteAdminButton: { backgroundColor: 'rgba(255, 130, 151, 0.12)', borderWidth: 1, borderColor: 'rgba(255, 130, 151, 0.48)' },
   editActionText: { color: '#00F2FE', fontSize: 9, fontWeight: '900' },
   deleteActionText: { color: '#FF8297', fontSize: 9, fontWeight: '900' },
   joinBtn: {
@@ -939,6 +947,20 @@ const styles = StyleSheet.create({
   },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
   modalTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '900' },
+  detailHeading: { flex: 1, paddingRight: 10 },
+  detailSport: { color: '#00F2FE', fontSize: 9, fontWeight: '900', letterSpacing: 1 },
+  detailBody: { gap: 12 },
+  detailLabel: { color: '#6F92A8', fontSize: 9, fontWeight: '900', letterSpacing: 1 },
+  detailDescription: { color: '#E2EFF5', fontSize: 15, lineHeight: 22 },
+  detailTeams: { color: '#00FFA3', fontSize: 14, fontWeight: '900' },
+  detailGrid: { gap: 10, paddingTop: 4 },
+  detailItem: { padding: 10, borderRadius: 8, backgroundColor: '#0F2030', borderWidth: 1, borderColor: 'rgba(139, 226, 245, 0.14)' },
+  detailValue: { color: '#F4FBFF', fontSize: 13, fontWeight: '800', marginTop: 4 },
+  detailActions: { flexDirection: 'row', gap: 8, marginTop: 4 },
+  detailEditButton: { flex: 1, paddingVertical: 11, borderRadius: 9, alignItems: 'center', backgroundColor: '#00F2FE' },
+  detailEditText: { color: '#06131D', fontSize: 12, fontWeight: '900' },
+  detailDeleteButton: { flex: 1, paddingVertical: 11, borderRadius: 9, alignItems: 'center', borderWidth: 1, borderColor: '#FF8297' },
+  detailDeleteText: { color: '#FF8297', fontSize: 12, fontWeight: '900' },
   closeModalBtn: { padding: 4 },
   closeModalText: { color: '#62829A', fontSize: 18, fontWeight: '900' },
   inputLabel: { color: '#88A3B8', fontSize: 11, fontWeight: '800', marginTop: 10, marginBottom: 4 },
