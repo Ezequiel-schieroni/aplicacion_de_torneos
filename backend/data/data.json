@@ -1,0 +1,44 @@
+{
+  "users": [
+    {
+      "id": "local-user",
+      "email": "demo@nexus.local",
+      "password": "demo"
+    }
+  ],
+  "tournaments": [
+    {
+      "id": "default-1",
+      "game": "Valorant",
+      "name": "CLUTCH MASTERS",
+      "description": "Torneo competitivo de Valorant.",
+      "colors": [
+        "#E44A61",
+        "#7D334A"
+      ],
+      "ownerId": null
+    },
+    {
+      "id": "default-2",
+      "game": "League of Legends",
+      "name": "LA GRIETA INVOCADA",
+      "description": "Torneo de eSports 5v5 con premios.",
+      "colors": [
+        "#B98B43",
+        "#4F9FB9"
+      ],
+      "ownerId": null
+    },
+    {
+      "id": "default-3",
+      "game": "Rocket League",
+      "name": "BOOSTED CUP",
+      "description": "Torneo para equipos.",
+      "colors": [
+        "#5D8FDC",
+        "#D7E8FF"
+      ],
+      "ownerId": null
+    }
+  ]
+}

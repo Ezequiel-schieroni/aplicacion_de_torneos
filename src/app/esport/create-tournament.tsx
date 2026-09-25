@@ -45,10 +45,12 @@ export default function CreateTournamentScreen() {
   function createTournament() {
     const tournamentName = title.trim() || 'Nuevo torneo';
     addTournament({
+      id: `tournament-${Date.now()}`,
       game: selectedGame,
       name: tournamentName,
       description: description.trim() || 'Torneo creado por la comunidad.',
       colors: ['#22E6D7', '#397A9B'],
+      ownerId: 'local-user',
     });
     router.replace('/esport');
   }
