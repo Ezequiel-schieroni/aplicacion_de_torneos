@@ -33,6 +33,11 @@ yarn-error.*
 # local env files
 .env*.local
 
+# local backend database
+backend/data/*.sqlite
+backend/data/*.sqlite-shm
+backend/data/*.sqlite-wal
+
 # typescript
 *.tsbuildinfo
 

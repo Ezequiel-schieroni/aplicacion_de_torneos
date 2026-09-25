@@ -3,20 +3,25 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { isAuthenticated, setAuthenticated } from './auth-state';
-import { getTournaments, removeTournament, Tournament } from './esport/tournament-state';
+import { clearSession, getCurrentUser, isAuthenticated } from './auth-state';
+import { getRegisteredTournamentIds, getTournaments, removeTournament, toggleTournamentRegistration, Tournament } from './esport/tournament-state';
 
 export default function EsportsScreen() {
   const router = useRouter();
   const [tournaments, setTournaments] = useState(getTournaments);
-  const [joined, setJoined] = useState<string[]>([]);
+  const [joined, setJoined] = useState(getRegisteredTournamentIds);
+  const user = getCurrentUser();
 
   if (!isAuthenticated()) {
     return <Redirect href="/login" />;
   }
 
   function toggleJoin(name: string) {
-    setJoined((current) => current.includes(name) ? current.filter((item) => item !== name) : [...current, name]);
+    const tournament = tournaments.find((item) => item.name === name);
+    if (tournament) {
+      toggleTournamentRegistration(tournament.id);
+      setJoined(getRegisteredTournamentIds());
+    }
   }
 
   return (
@@ -37,8 +42,8 @@ export default function EsportsScreen() {
             <View style={styles.sidebar}>
               <View style={styles.profileCard}>
                 <View style={styles.largeAvatar}><View style={styles.largeHair} /><View style={styles.largeFace} /><View style={styles.largeShoulders} /></View>
-                <View style={styles.profileCopy}><Text style={styles.profileLine}>♙  mi tournaments</Text><Text style={styles.profileLine}>♧  ver perfil⌄</Text></View>
-                <Pressable onPress={() => { setAuthenticated(false); router.replace('/login'); }} style={({ pressed }) => [styles.logoutButton, pressed && styles.pressed]}><Text style={styles.logoutText}>Cerrar Sesión</Text></Pressable>
+                <View style={styles.profileCopy}><Text style={styles.profileLine}>♙  {user?.username ?? 'competidor'}</Text><Pressable onPress={() => router.push('/profile')}><Text style={styles.profileLine}>♧  ver perfil⌄</Text></Pressable></View>
+                <Pressable onPress={() => { clearSession(); router.replace('/login'); }} style={({ pressed }) => [styles.logoutButton, pressed && styles.pressed]}><Text style={styles.logoutText}>Cerrar Sesión</Text></Pressable>
               </View>
               <View style={styles.registeredPanel}>
                 <Text style={styles.registeredTitle}>los torneos inscriptos</Text>
@@ -63,8 +68,8 @@ export default function EsportsScreen() {
               </View>
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.grid}>
                 {tournaments.map((tournament) => {
-                  const isJoined = joined.includes(tournament.name);
-                  return <TournamentCard key={tournament.id} {...tournament} isJoined={isJoined} onToggle={() => toggleJoin(tournament.name)} onEdit={() => router.push(`/esport/edit-tournament?id=${tournament.id}`)} onDelete={() => { removeTournament(tournament.id); setTournaments((current) => current.filter((item) => item.id !== tournament.id)); setJoined((current) => current.filter((item) => item !== tournament.name)); }} />;
+                  const isJoined = joined.includes(tournament.id);
+                  return <TournamentCard key={tournament.id} {...tournament} isJoined={isJoined} onToggle={() => toggleJoin(tournament.name)} onEdit={() => router.push(`/esport/edit-tournament?id=${tournament.id}`)} onDelete={() => { removeTournament(tournament.id); setTournaments((current) => current.filter((item) => item.id !== tournament.id)); setJoined((current) => current.filter((item) => item !== tournament.id)); }} />;
                 })}
               </ScrollView>
             </View>
@@ -76,7 +81,7 @@ export default function EsportsScreen() {
 }
 
 function TournamentCard({ id, game, name, description, colors, ownerId, isJoined, onToggle, onEdit, onDelete }: Tournament & { isJoined: boolean; onToggle: () => void; onEdit: () => void; onDelete: () => void }) {
-  const isOwner = ownerId === 'local-user';
+  const isOwner = ownerId === getCurrentUser()?.id;
 
   return (
     <View style={[styles.tournamentCard, isOwner && styles.ownerCard]}>

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { isAuthenticated, setAuthenticated } from './auth-state';
+import { clearSession, isAuthenticated } from './auth-state';
 
 export default function Index() {
   const router = useRouter();
@@ -92,7 +92,7 @@ export default function Index() {
                       },
                     ]}
                   >
-                    <Pressable style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}>
+                    <Pressable onPress={() => { setProfileMenuVisible(false); router.push('/profile'); }} style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}>
                       <Text style={styles.menuIcon}>♙</Text>
                       <Text style={styles.menuText}>Mi Perfil</Text>
                     </Pressable>
@@ -102,7 +102,7 @@ export default function Index() {
                     </Pressable>
                     <Pressable
                       onPress={() => {
-                        setAuthenticated(false);
+                        clearSession();
                         setProfileMenuVisible(false);
                         router.replace('/login');
                       }}

@@ -3,13 +3,13 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { isAuthenticated } from '../auth-state';
+import { getCurrentUser, isAuthenticated } from '../auth-state';
 import { getTournaments, updateTournament } from './tournament-state';
 
 export default function EditTournamentScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const tournament = getTournaments().find((item) => item.id === id && item.ownerId === 'local-user');
+  const tournament = getTournaments().find((item) => item.id === id && item.ownerId === getCurrentUser()?.id);
   const [name, setName] = useState(tournament?.name ?? '');
   const [description, setDescription] = useState(tournament?.description ?? '');
 

@@ -1,3 +1,5 @@
+import { getCurrentUser } from '../auth-state';
+
 export type Tournament = {
   id: string;
   game: string;
@@ -19,6 +21,14 @@ const tournaments: Tournament[] = [
   { id: 'default-9', game: 'Apex Legends', name: 'TORNEO DE LEYENDAS', description: 'Un mini descripción here de battle royale.', colors: ['#E35A5A', '#C1C6D5'] },
 ];
 
+const registeredTournamentIdsByUser: Record<string, string[]> = {};
+
+function getCurrentRegistrations() {
+  const userId = getCurrentUser()?.id ?? 'anonymous';
+  registeredTournamentIdsByUser[userId] ??= [];
+  return registeredTournamentIdsByUser[userId];
+}
+
 export function getTournaments() {
   return [...tournaments];
 }
@@ -29,14 +39,29 @@ export function addTournament(tournament: Tournament) {
 
 export function updateTournament(id: string, changes: Pick<Tournament, 'game' | 'name' | 'description'>) {
   const tournament = tournaments.find((item) => item.id === id);
-  if (tournament && tournament.ownerId === 'local-user') {
+  if (tournament && tournament.ownerId === getCurrentUser()?.id) {
     Object.assign(tournament, changes);
   }
 }
 
 export function removeTournament(id: string) {
-  const index = tournaments.findIndex((item) => item.id === id && item.ownerId === 'local-user');
+  const index = tournaments.findIndex((item) => item.id === id && item.ownerId === getCurrentUser()?.id);
   if (index >= 0) {
     tournaments.splice(index, 1);
   }
+}
+
+export function getRegisteredTournamentIds() {
+  return [...getCurrentRegistrations()];
+}
+
+export function toggleTournamentRegistration(id: string) {
+  const registeredTournamentIds = getCurrentRegistrations();
+  const index = registeredTournamentIds.indexOf(id);
+  if (index >= 0) {
+    registeredTournamentIds.splice(index, 1);
+    return false;
+  }
+  registeredTournamentIds.push(id);
+  return true;
 }

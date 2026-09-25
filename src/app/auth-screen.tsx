@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { setAuthenticated } from './auth-state';
+import { setSession } from './auth-state';
 
 type AuthMode = 'login' | 'signup';
+const API_URL = 'http://localhost:3000';
+type AuthResponse = { user?: { id: string; username: string; email: string }; error?: string };
 
 export default function AuthScreen({ mode }: { mode: AuthMode }) {
   const isSignup = mode === 'signup';
@@ -15,19 +17,35 @@ export default function AuthScreen({ mode }: { mode: AuthMode }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit() {
-    if (isSignup && (!email.trim() || !password.trim() || !name.trim())) {
+  async function handleSubmit() {
+    if (!email.trim() || !password.trim() || (isSignup && !name.trim())) {
       Alert.alert('Faltan datos', 'Completa los campos para continuar.');
       return;
     }
-    if (!isSignup) {
-      setAuthenticated(true);
+
+    setSubmitting(true);
+    try {
+      const response = await fetch(`${API_URL}/api/auth/${isSignup ? 'register' : 'login'}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(isSignup
+          ? { username: name.trim(), email: email.trim().toLowerCase(), password }
+          : { identifier: email.trim().toLowerCase(), password }),
+      });
+      const result = await response.json() as AuthResponse;
+      if (!response.ok || !result.user) {
+        Alert.alert(isSignup ? 'No se pudo crear la cuenta' : 'No se pudo iniciar sesión', response.status === 401 ? 'El usuario o la contraseña no son correctos.' : result.error ?? 'Revisa los datos e inténtalo nuevamente.');
+        return;
+      }
+      setSession(result.user);
       router.replace('/');
-      return;
+    } catch {
+      Alert.alert('Backend no disponible', 'Inicia el servidor con npm run dev dentro de la carpeta backend.');
+    } finally {
+      setSubmitting(false);
     }
-    setAuthenticated(true);
-    router.replace('/');
   }
 
   return (
@@ -61,7 +79,7 @@ export default function AuthScreen({ mode }: { mode: AuthMode }) {
               <Field label="Correo electrónico" placeholder="tu@email.com" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
               <Field label="Contraseña" placeholder={isSignup ? 'Mínimo 8 caracteres' : 'Tu contraseña'} value={password} onChangeText={setPassword} secureTextEntry={!showPassword} rightAction={<Pressable accessibilityRole="button" onPress={() => setShowPassword((visible) => !visible)}><Text style={styles.showPassword}>{showPassword ? 'Ocultar' : 'Ver'}</Text></Pressable>} />
               {!isSignup && <Text style={styles.recovery}>¿Olvidaste tu contraseña?</Text>}
-              <Pressable accessibilityRole="button" onPress={handleSubmit} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}><Text style={styles.primaryButtonText}>{isSignup ? 'Entrar a la competición' : 'Continuar a la arena'}</Text><View style={styles.arrowCircle}><Text style={styles.arrow}>→</Text></View></Pressable>
+              <Pressable accessibilityRole="button" disabled={submitting} onPress={handleSubmit} style={({ pressed }) => [styles.primaryButton, submitting && styles.disabledButton, pressed && styles.pressed]}><Text style={styles.primaryButtonText}>{submitting ? 'Comprobando...' : isSignup ? 'Entrar a la competición' : 'Continuar a la arena'}</Text><View style={styles.arrowCircle}><Text style={styles.arrow}>→</Text></View></Pressable>
               <View style={styles.dividerRow}><View style={styles.divider} /><Text style={styles.dividerText}>O ACCEDE CON</Text><View style={styles.divider} /></View>
               <Pressable accessibilityRole="button" onPress={() => Alert.alert('Google', 'Configuraremos este acceso junto con el backend.')} style={({ pressed }) => [styles.googleButton, pressed && styles.pressed]}><Text style={styles.googleG}>G</Text><Text style={styles.googleButtonText}>Continuar con Google</Text></Pressable>
             </GlassView>

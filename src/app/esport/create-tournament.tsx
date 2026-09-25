@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { isAuthenticated } from '../auth-state';
+import { getCurrentUser, isAuthenticated } from '../auth-state';
 import { addTournament } from './tournament-state';
 
 const defaultGameOptions = ['Valorant', 'League of Legends', 'Rocket League'];
@@ -50,7 +50,7 @@ export default function CreateTournamentScreen() {
       name: tournamentName,
       description: description.trim() || 'Torneo creado por la comunidad.',
       colors: ['#22E6D7', '#397A9B'],
-      ownerId: 'local-user',
+      ownerId: getCurrentUser()?.id ?? 'local-user',
     });
     router.replace('/esport');
   }
