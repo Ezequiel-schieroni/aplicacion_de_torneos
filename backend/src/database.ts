@@ -21,16 +21,15 @@ export async function initializeDatabase() {
   await bootstrap.query(`CREATE DATABASE IF NOT EXISTS \`${config.database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
   await bootstrap.end();
 
-  await database.query(`
-    CREATE TABLE IF NOT EXISTS users (
+  const tableStatements = [
+    `CREATE TABLE IF NOT EXISTS users (
       id VARCHAR(36) PRIMARY KEY,
       username VARCHAR(80) NOT NULL UNIQUE,
       email VARCHAR(255) NOT NULL UNIQUE,
       password_hash VARCHAR(255) NOT NULL,
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB;
-
-    CREATE TABLE IF NOT EXISTS tournaments (
+    ) ENGINE=InnoDB`,
+    `CREATE TABLE IF NOT EXISTS tournaments (
       id VARCHAR(36) PRIMARY KEY,
       game VARCHAR(120) NOT NULL,
       name VARCHAR(180) NOT NULL,
@@ -41,9 +40,8 @@ export async function initializeDatabase() {
       CONSTRAINT fk_tournaments_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL,
       INDEX idx_tournaments_owner_id (owner_id),
       INDEX idx_tournaments_created_at (created_at)
-    ) ENGINE=InnoDB;
-
-    CREATE TABLE IF NOT EXISTS tournament_registrations (
+    ) ENGINE=InnoDB`,
+    `CREATE TABLE IF NOT EXISTS tournament_registrations (
       user_id VARCHAR(36) NOT NULL,
       tournament_id VARCHAR(36) NOT NULL,
       registered_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -51,8 +49,12 @@ export async function initializeDatabase() {
       CONSTRAINT fk_registrations_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
       CONSTRAINT fk_registrations_tournament FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE,
       INDEX idx_registrations_tournament_id (tournament_id)
-    ) ENGINE=InnoDB
-  `);
+    ) ENGINE=InnoDB`,
+  ];
+
+  for (const statement of tableStatements) {
+    await database.query(statement);
+  }
 
   await database.execute('INSERT IGNORE INTO users (id, username, email, password_hash) VALUES (?, ?, ?, ?)', ['local-user', 'demo', 'demo@nexus.local', hashPassword('demo')]);
   const [countRows] = await database.query<RowDataPacket[]>('SELECT COUNT(*) AS count FROM tournaments');
