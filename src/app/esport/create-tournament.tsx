@@ -1,10 +1,10 @@
 import { Redirect, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getCurrentUser, isAuthenticated } from '../auth-state';
-import { addTournament } from './tournament-state';
+import { isAuthenticated } from '../auth-state';
+import { createTournament } from './tournament-state';
 
 const defaultGameOptions = ['Valorant', 'League of Legends', 'Rocket League'];
 
@@ -18,6 +18,7 @@ export default function CreateTournamentScreen() {
   const [addGameVisible, setAddGameVisible] = useState(false);
   const [teams, setTeams] = useState(8);
   const [players, setPlayers] = useState(5);
+  const [submitting, setSubmitting] = useState(false);
 
   if (!isAuthenticated()) {
     return <Redirect href="/login" />;
@@ -42,17 +43,22 @@ export default function CreateTournamentScreen() {
     setValue(Math.max(minimum, value + amount));
   }
 
-  function createTournament() {
+  async function handleCreateTournament() {
     const tournamentName = title.trim() || 'Nuevo torneo';
-    addTournament({
-      id: `tournament-${Date.now()}`,
-      game: selectedGame,
-      name: tournamentName,
-      description: description.trim() || 'Torneo creado por la comunidad.',
-      colors: ['#22E6D7', '#397A9B'],
-      ownerId: getCurrentUser()?.id ?? 'local-user',
-    });
-    router.replace('/esport');
+    setSubmitting(true);
+    try {
+      await createTournament({
+        game: selectedGame,
+        name: tournamentName,
+        description: description.trim() || 'Torneo creado por la comunidad.',
+        colors: ['#22E6D7', '#397A9B'],
+      });
+      router.replace('/esport');
+    } catch (error) {
+      Alert.alert('No se pudo crear el torneo', error instanceof Error ? error.message : 'Inténtalo nuevamente.');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -116,7 +122,7 @@ export default function CreateTournamentScreen() {
               </FormField>
 
               <View style={styles.notice}><Text style={styles.noticeIcon}>i</Text><Text style={styles.noticeText}>Podrás editar estos datos y administrar las inscripciones después de crear el torneo.</Text></View>
-              <View style={styles.actions}><Pressable onPress={() => router.replace('/esport')} style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}><Text style={styles.cancelText}>Cancelar</Text></Pressable><Pressable onPress={createTournament} style={({ pressed }) => [styles.submitButton, pressed && styles.pressed]}><Text style={styles.submitText}>Crear torneo</Text><Text style={styles.submitArrow}>→</Text></Pressable></View>
+              <View style={styles.actions}><Pressable onPress={() => router.replace('/esport')} style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}><Text style={styles.cancelText}>Cancelar</Text></Pressable><Pressable disabled={submitting} onPress={handleCreateTournament} style={({ pressed }) => [styles.submitButton, pressed && styles.pressed]}><Text style={styles.submitText}>{submitting ? 'Guardando...' : 'Crear torneo'}</Text><Text style={styles.submitArrow}>→</Text></Pressable></View>
             </View>
           </ScrollView>
         </View>

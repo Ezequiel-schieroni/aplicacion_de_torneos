@@ -1,20 +1,46 @@
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getCurrentUser, isAuthenticated } from '../auth-state';
-import { getTournaments, updateTournament } from './tournament-state';
+import { getTournaments, updateTournament, type Tournament } from './tournament-state';
 
 export default function EditTournamentScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const tournament = getTournaments().find((item) => item.id === id && item.ownerId === getCurrentUser()?.id);
-  const [name, setName] = useState(tournament?.name ?? '');
-  const [description, setDescription] = useState(tournament?.description ?? '');
+  const [tournament, setTournament] = useState<Tournament | null>(null);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    getTournaments()
+      .then((items) => {
+        const found = items.find((item) => item.id === id && item.ownerId === getCurrentUser()?.id) ?? null;
+        if (active) {
+          setTournament(found);
+          setName(found?.name ?? '');
+          setDescription(found?.description ?? '');
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) Alert.alert('No se pudo cargar el torneo', error instanceof Error ? error.message : 'Inténtalo nuevamente.');
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+    return () => { active = false; };
+  }, [id]);
 
   if (!isAuthenticated()) {
     return <Redirect href="/login" />;
+  }
+
+  if (isLoading) {
+    return null;
   }
 
   if (!tournament) {
@@ -23,9 +49,16 @@ export default function EditTournamentScreen() {
 
   const editableTournament = tournament;
 
-  function saveChanges() {
-    updateTournament(editableTournament.id, { game: editableTournament.game, name: name.trim() || editableTournament.name, description: description.trim() || editableTournament.description });
-    router.replace('/esport');
+  async function saveChanges() {
+    setIsSaving(true);
+    try {
+      await updateTournament(editableTournament.id, { game: editableTournament.game, name: name.trim() || editableTournament.name, description: description.trim() || editableTournament.description });
+      router.replace('/esport');
+    } catch (error) {
+      Alert.alert('No se pudo guardar el torneo', error instanceof Error ? error.message : 'Inténtalo nuevamente.');
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
@@ -43,7 +76,7 @@ export default function EditTournamentScreen() {
             <Text style={styles.label}>DESCRIPCIÓN</Text>
             <TextInput value={description} onChangeText={setDescription} multiline style={[styles.input, styles.description]} placeholderTextColor="#708A99" />
             <Text style={styles.game}>JUEGO: {editableTournament.game}</Text>
-            <View style={styles.actions}><Pressable onPress={() => router.replace('/esport')} style={({ pressed }) => [styles.cancel, pressed && styles.pressed]}><Text style={styles.cancelText}>Cancelar</Text></Pressable><Pressable onPress={saveChanges} style={({ pressed }) => [styles.save, pressed && styles.pressed]}><Text style={styles.saveText}>Guardar cambios</Text></Pressable></View>
+            <View style={styles.actions}><Pressable onPress={() => router.replace('/esport')} style={({ pressed }) => [styles.cancel, pressed && styles.pressed]}><Text style={styles.cancelText}>Cancelar</Text></Pressable><Pressable disabled={isSaving} onPress={saveChanges} style={({ pressed }) => [styles.save, pressed && styles.pressed]}><Text style={styles.saveText}>{isSaving ? 'Guardando...' : 'Guardar cambios'}</Text></Pressable></View>
           </View>
         </View>
       </SafeAreaView>

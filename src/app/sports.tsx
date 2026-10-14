@@ -1,20 +1,30 @@
 import { Redirect, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  Alert,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    Alert,
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { isAuthenticated, setAuthenticated } from './auth-state';
-
-type EventKind = 'Torneo' | 'Partido';
+import {
+    createSportEvent,
+    deleteSportEvent,
+    getRegisteredCourtIds,
+    getSportEvents,
+    setCourtRegistration,
+    setSportEventRegistration,
+    updateSportEvent,
+    type SportEvent,
+    type SportEventInput,
+    type SportEventKind,
+} from '../services/sports-state';
+import { getCurrentUser, isAuthenticated, setAuthenticated } from './auth-state';
 
 type Court = {
   id: string;
@@ -26,21 +36,6 @@ type Court = {
   lighting: string;
   capacity: string;
   amenities: string;
-};
-
-type SportEvent = {
-  id: number;
-  kind: EventKind;
-  name: string;
-  sport: string;
-  venue: string;
-  date: string;
-  time: string;
-  format: string;
-  teams?: string;
-  description: string;
-  isRegistered?: boolean;
-  createdBy: 'admin';
 };
 
 const sportsList = ['Todos', 'Fútbol', 'Rugby', 'Tenis', 'Pádel', 'Básquet'];
@@ -64,19 +59,18 @@ const venues = courts.map((court) => court.name);
 const times = ['18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
 const formats = ['Amistoso', 'Liga', 'Eliminación directa', 'Fase de grupos'];
 
-const initialEvents: SportEvent[] = [];
-
 export default function SportsScreen() {
   const router = useRouter();
 
-  // Estados principales
-  const [events, setEvents] = useState<SportEvent[]>(initialEvents);
+  const [events, setEvents] = useState<SportEvent[]>([]);
   const [selectedSport, setSelectedSport] = useState('Todos');
   const [enteredCourts, setEnteredCourts] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Estado del modal de creación
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
-  const [kind, setKind] = useState<EventKind>('Torneo');
+  const [kind, setKind] = useState<SportEventKind>('Torneo');
   const [name, setName] = useState('');
   const [sport, setSport] = useState(sportsOptions[0]);
   const [venue, setVenue] = useState(venues[0]);
@@ -86,11 +80,31 @@ export default function SportsScreen() {
   const [teamA, setTeamA] = useState('');
   const [teamB, setTeamB] = useState('');
   const [description, setDescription] = useState('');
-  const [editingEventId, setEditingEventId] = useState<number | null>(null);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<SportEvent | null>(null);
 
   // Estado para la modal de coincidencia de fecha/cancha
   const [coincidingEvent, setCoincidingEvent] = useState<SportEvent | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([getSportEvents(), getRegisteredCourtIds()])
+      .then(([loadedEvents, courtIds]) => {
+        if (active) {
+          setEvents(loadedEvents);
+          setEnteredCourts(courtIds);
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          Alert.alert('No se pudieron cargar los deportes', error instanceof Error ? error.message : 'Inténtalo nuevamente.');
+        }
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
 
   if (!isAuthenticated()) {
     return <Redirect href="/login" />;
@@ -111,7 +125,7 @@ export default function SportsScreen() {
     ? courts
     : courts.filter((court) => court.sport === selectedSport);
 
-  function openCreator(nextKind: EventKind) {
+  function openCreator(nextKind: SportEventKind) {
     setEditingEventId(null);
     setKind(nextKind);
     setName('');
@@ -166,12 +180,11 @@ export default function SportsScreen() {
       return;
     }
 
-    saveEvent();
+    void saveEvent();
   }
 
-  function saveEvent() {
-    const newEvent: SportEvent = {
-      id: Date.now(),
+  async function saveEvent() {
+    const event: SportEventInput = {
       kind,
       name: name.trim(),
       sport,
@@ -179,35 +192,56 @@ export default function SportsScreen() {
       date: date.trim(),
       time,
       format,
-      teams: kind === 'Partido' ? `${teamA.trim()} vs ${teamB.trim()}` : undefined,
+      teams: kind === 'Partido' ? `${teamA.trim()} vs ${teamB.trim()}` : null,
       description: description.trim() || `Competencia de ${sport} (${format}).`,
-      isRegistered: true,
-      createdBy: 'admin',
     };
 
-    setEvents((prev) => editingEventId === null
-      ? [newEvent, ...prev]
-      : prev.map((event) => event.id === editingEventId ? { ...newEvent, id: editingEventId, isRegistered: event.isRegistered } : event));
-    setIsCreatorOpen(false);
-    setCoincidingEvent(null);
-    setEditingEventId(null);
+    setIsSaving(true);
+    try {
+      const savedEvent = editingEventId === null
+        ? await createSportEvent(event)
+        : await updateSportEvent(editingEventId, event);
+      setEvents((current) => editingEventId === null
+        ? [savedEvent, ...current]
+        : current.map((item) => item.id === savedEvent.id ? savedEvent : item));
+      setIsCreatorOpen(false);
+      setCoincidingEvent(null);
+      setEditingEventId(null);
+    } catch (error) {
+      Alert.alert('No se pudo guardar el evento', error instanceof Error ? error.message : 'Inténtalo nuevamente.');
+    } finally {
+      setIsSaving(false);
+    }
   }
 
-  function deleteEvent(event: SportEvent) {
-    setEvents((prev) => prev.filter((item) => item.id !== event.id));
-    setSelectedEvent(null);
+  async function deleteEvent(event: SportEvent) {
+    try {
+      await deleteSportEvent(event.id);
+      setEvents((current) => current.filter((item) => item.id !== event.id));
+      setSelectedEvent(null);
+    } catch (error) {
+      Alert.alert('No se pudo eliminar el evento', error instanceof Error ? error.message : 'Inténtalo nuevamente.');
+    }
   }
 
-  function toggleRegister(id: number) {
-    setEvents((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, isRegistered: !e.isRegistered } : e))
-    );
+  async function toggleRegister(event: SportEvent) {
+    const registering = !event.isRegistered;
+    try {
+      await setSportEventRegistration(event.id, registering);
+      setEvents((current) => current.map((item) => item.id === event.id ? { ...item, isRegistered: registering } : item));
+    } catch (error) {
+      Alert.alert('No se pudo actualizar la inscripción', error instanceof Error ? error.message : 'Inténtalo nuevamente.');
+    }
   }
 
-  function toggleCourtEntry(id: string) {
-    setEnteredCourts((current) =>
-      current.includes(id) ? current.filter((courtId) => courtId !== id) : [...current, id]
-    );
+  async function toggleCourtEntry(id: string) {
+    const registering = !enteredCourts.includes(id);
+    try {
+      await setCourtRegistration(id, registering);
+      setEnteredCourts((current) => registering ? [...current, id] : current.filter((courtId) => courtId !== id));
+    } catch (error) {
+      Alert.alert('No se pudo actualizar la cancha', error instanceof Error ? error.message : 'Inténtalo nuevamente.');
+    }
   }
 
   return (
@@ -397,7 +431,9 @@ export default function SportsScreen() {
               </View>
 
               {/* REJILLA / GRID DE TORNEOS DISPONIBLES */}
-              {filteredEvents.length === 0 ? (
+              {isLoading ? (
+                <View style={styles.emptyContainer}><Text style={styles.emptySub}>Cargando eventos deportivos...</Text></View>
+              ) : filteredEvents.length === 0 ? (
                 <View style={styles.emptyContainer}>
                   <Text style={styles.emptyIcon}>🔍</Text>
                   <Text style={styles.emptyTitle}>No hay torneos de {selectedSport}</Text>
@@ -429,19 +465,19 @@ export default function SportsScreen() {
                           <Text style={styles.miniIcon}>🏆</Text>
                           <Text style={styles.miniIcon}>⚽</Text>
                         </View>
-                        {evt.createdBy === 'admin' && (
+                        {evt.ownerId === getCurrentUser()?.id && (
                           <View style={styles.adminActions}>
                             <Pressable accessibilityRole="button" accessibilityLabel={`Editar ${evt.name}`} onPress={() => openEditor(evt)} style={({ pressed }) => [styles.adminActionButton, styles.editAdminButton, pressed && styles.pressed]}>
                               <Text style={styles.editActionText}>Editar</Text>
                             </Pressable>
-                            <Pressable accessibilityRole="button" accessibilityLabel={`Eliminar ${evt.name}`} onPress={() => deleteEvent(evt)} style={({ pressed }) => [styles.adminActionButton, styles.deleteAdminButton, pressed && styles.pressed]}>
+                            <Pressable accessibilityRole="button" accessibilityLabel={`Eliminar ${evt.name}`} onPress={() => { void deleteEvent(evt); }} style={({ pressed }) => [styles.adminActionButton, styles.deleteAdminButton, pressed && styles.pressed]}>
                               <Text style={styles.deleteActionText}>Eliminar</Text>
                             </Pressable>
                           </View>
                         )}
                         <Pressable
                           accessibilityRole="button"
-                          onPress={() => toggleRegister(evt.id)}
+                          onPress={() => { void toggleRegister(evt); }}
                           style={[
                             styles.joinBtn,
                             evt.isRegistered && styles.joinBtnActive,
@@ -585,10 +621,11 @@ export default function SportsScreen() {
 
             <Pressable
               accessibilityRole="button"
+              disabled={isSaving}
               onPress={handleCreateEvent}
               style={({ pressed }) => [styles.submitModalBtn, pressed && styles.pressed]}
             >
-              <Text style={styles.submitModalBtnText}>{editingEventId === null ? `Confirmar y Crear ${kind}` : 'Guardar cambios'}</Text>
+              <Text style={styles.submitModalBtnText}>{isSaving ? 'Guardando...' : editingEventId === null ? `Confirmar y Crear ${kind}` : 'Guardar cambios'}</Text>
             </Pressable>
           </View>
         </View>
@@ -618,12 +655,14 @@ export default function SportsScreen() {
                   <View style={styles.detailItem}><Text style={styles.detailLabel}>FORMATO</Text><Text style={styles.detailValue}>{selectedEvent.format}</Text></View>
                 </View>
                 <View style={styles.detailActions}>
-                  <Pressable accessibilityRole="button" onPress={() => { setSelectedEvent(null); openEditor(selectedEvent); }} style={styles.detailEditButton}>
-                    <Text style={styles.detailEditText}>Editar</Text>
-                  </Pressable>
-                  <Pressable accessibilityRole="button" onPress={() => deleteEvent(selectedEvent)} style={styles.detailDeleteButton}>
-                    <Text style={styles.detailDeleteText}>Eliminar</Text>
-                  </Pressable>
+                  {selectedEvent.ownerId === getCurrentUser()?.id && <>
+                    <Pressable accessibilityRole="button" onPress={() => { setSelectedEvent(null); openEditor(selectedEvent); }} style={styles.detailEditButton}>
+                      <Text style={styles.detailEditText}>Editar</Text>
+                    </Pressable>
+                    <Pressable accessibilityRole="button" onPress={() => { void deleteEvent(selectedEvent); }} style={styles.detailDeleteButton}>
+                      <Text style={styles.detailDeleteText}>Eliminar</Text>
+                    </Pressable>
+                  </>}
                 </View>
               </View>
             )}
@@ -660,7 +699,7 @@ export default function SportsScreen() {
                 accessibilityRole="button"
                 onPress={() => {
                   if (coincidingEvent) {
-                    toggleRegister(coincidingEvent.id);
+                    void toggleRegister(coincidingEvent);
                   }
                   setCoincidingEvent(null);
                   setIsCreatorOpen(false);
@@ -681,7 +720,7 @@ export default function SportsScreen() {
               <Pressable
                 accessibilityRole="button"
                 onPress={() => {
-                    saveEvent();
+                    void saveEvent();
                 }}
                 style={({ pressed }) => [styles.coincidenceBtnForce, pressed && styles.pressed]}
               >

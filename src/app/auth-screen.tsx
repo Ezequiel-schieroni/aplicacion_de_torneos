@@ -4,10 +4,10 @@ import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { API_URL } from '../services/api';
 import { setSession } from './auth-state';
 
 type AuthMode = 'login' | 'signup';
-const API_URL = 'http://localhost:3000';
 type AuthResponse = { user?: { id: string; username: string; email: string }; error?: string };
 
 export default function AuthScreen({ mode }: { mode: AuthMode }) {
@@ -79,7 +79,7 @@ export default function AuthScreen({ mode }: { mode: AuthMode }) {
               <Field label="Correo electrónico" placeholder="tu@email.com" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
               <Field label="Contraseña" placeholder={isSignup ? 'Mínimo 8 caracteres' : 'Tu contraseña'} value={password} onChangeText={setPassword} secureTextEntry={!showPassword} rightAction={<Pressable accessibilityRole="button" onPress={() => setShowPassword((visible) => !visible)}><Text style={styles.showPassword}>{showPassword ? 'Ocultar' : 'Ver'}</Text></Pressable>} />
               {!isSignup && <Text style={styles.recovery}>¿Olvidaste tu contraseña?</Text>}
-              <Pressable accessibilityRole="button" disabled={submitting} onPress={handleSubmit} style={({ pressed }) => [styles.primaryButton, submitting && styles.disabledButton, pressed && styles.pressed]}><Text style={styles.primaryButtonText}>{submitting ? 'Comprobando...' : isSignup ? 'Entrar a la competición' : 'Continuar a la arena'}</Text><View style={styles.arrowCircle}><Text style={styles.arrow}>→</Text></View></Pressable>
+              <Pressable accessibilityRole="button" disabled={submitting} onPress={handleSubmit} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}><Text style={styles.primaryButtonText}>{submitting ? 'Comprobando...' : isSignup ? 'Entrar a la competición' : 'Continuar a la arena'}</Text><View style={styles.arrowCircle}><Text style={styles.arrow}>→</Text></View></Pressable>
               <View style={styles.dividerRow}><View style={styles.divider} /><Text style={styles.dividerText}>O ACCEDE CON</Text><View style={styles.divider} /></View>
               <Pressable accessibilityRole="button" onPress={() => Alert.alert('Google', 'Configuraremos este acceso junto con el backend.')} style={({ pressed }) => [styles.googleButton, pressed && styles.pressed]}><Text style={styles.googleG}>G</Text><Text style={styles.googleButtonText}>Continuar con Google</Text></Pressable>
             </GlassView>

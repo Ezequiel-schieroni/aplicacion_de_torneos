@@ -1,28 +1,63 @@
 import { Redirect, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { clearSession, getCurrentUser, isAuthenticated } from './auth-state';
-import { getRegisteredTournamentIds, getTournaments, removeTournament, toggleTournamentRegistration, Tournament } from './esport/tournament-state';
+import { getRegisteredTournamentIds, getTournaments, removeTournament, setTournamentRegistration, type Tournament } from './esport/tournament-state';
 
 export default function EsportsScreen() {
   const router = useRouter();
-  const [tournaments, setTournaments] = useState(getTournaments);
-  const [joined, setJoined] = useState(getRegisteredTournamentIds);
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [joined, setJoined] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const user = getCurrentUser();
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([getTournaments(), getRegisteredTournamentIds()])
+      .then(([loadedTournaments, registrations]) => {
+        if (active) {
+          setTournaments(loadedTournaments);
+          setJoined(registrations);
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          Alert.alert('No se pudieron cargar los torneos', error instanceof Error ? error.message : 'Inténtalo nuevamente.');
+        }
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
 
   if (!isAuthenticated()) {
     return <Redirect href="/login" />;
   }
 
-  function toggleJoin(name: string) {
-    const tournament = tournaments.find((item) => item.name === name);
-    if (tournament) {
-      toggleTournamentRegistration(tournament.id);
-      setJoined(getRegisteredTournamentIds());
+  async function toggleJoin(id: string) {
+    const registering = !joined.includes(id);
+    try {
+      await setTournamentRegistration(id, registering);
+      setJoined((current) => registering ? [...current, id] : current.filter((item) => item !== id));
+    } catch (error) {
+      Alert.alert('No se pudo actualizar la inscripción', error instanceof Error ? error.message : 'Inténtalo nuevamente.');
     }
   }
+
+  async function deleteTournament(id: string) {
+    try {
+      await removeTournament(id);
+      setTournaments((current) => current.filter((item) => item.id !== id));
+      setJoined((current) => current.filter((item) => item !== id));
+    } catch (error) {
+      Alert.alert('No se pudo eliminar el torneo', error instanceof Error ? error.message : 'Inténtalo nuevamente.');
+    }
+  }
+
+  const joinedTournaments = tournaments.filter((tournament) => joined.includes(tournament.id));
 
   return (
     <View style={styles.screen}>
@@ -47,13 +82,13 @@ export default function EsportsScreen() {
               </View>
               <View style={styles.registeredPanel}>
                 <Text style={styles.registeredTitle}>los torneos inscriptos</Text>
-                {joined.length === 0 ? (
+                {joinedTournaments.length === 0 ? (
                   <Text style={styles.emptyRegistered}>Todavía no estás inscripto.</Text>
                 ) : (
-                  joined.map((name) => (
-                    <View key={name} style={styles.registeredRow}>
+                  joinedTournaments.map((tournament) => (
+                    <View key={tournament.id} style={styles.registeredRow}>
                       <Text style={styles.registeredIcon}>▣</Text>
-                      <View style={styles.registeredCopy}><Text numberOfLines={1} style={styles.registeredName}>{name}</Text><Text style={styles.registeredCaption}>Inscripción activa</Text></View>
+                      <View style={styles.registeredCopy}><Text numberOfLines={1} style={styles.registeredName}>{tournament.name}</Text><Text style={styles.registeredCaption}>Inscripción activa</Text></View>
                       <View style={[styles.status, styles.statusOn]}><View style={styles.statusDot} /></View>
                     </View>
                   ))
@@ -67,9 +102,9 @@ export default function EsportsScreen() {
                 <Pressable onPress={() => router.push('/esport/create-tournament')} style={({ pressed }) => [styles.createButton, pressed && styles.pressed]}><Text style={styles.createPlus}>＋</Text><Text style={styles.createText}>CREAR TORNEO</Text></Pressable>
               </View>
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.grid}>
-                {tournaments.map((tournament) => {
+                {isLoading ? <Text style={styles.emptyRegistered}>Cargando torneos...</Text> : tournaments.map((tournament) => {
                   const isJoined = joined.includes(tournament.id);
-                  return <TournamentCard key={tournament.id} {...tournament} isJoined={isJoined} onToggle={() => toggleJoin(tournament.name)} onEdit={() => router.push(`/esport/edit-tournament?id=${tournament.id}`)} onDelete={() => { removeTournament(tournament.id); setTournaments((current) => current.filter((item) => item.id !== tournament.id)); setJoined((current) => current.filter((item) => item !== tournament.id)); }} />;
+                  return <TournamentCard key={tournament.id} {...tournament} isJoined={isJoined} onToggle={() => { void toggleJoin(tournament.id); }} onEdit={() => router.push(`/esport/edit-tournament?id=${tournament.id}`)} onDelete={() => { void deleteTournament(tournament.id); }} />;
                 })}
               </ScrollView>
             </View>

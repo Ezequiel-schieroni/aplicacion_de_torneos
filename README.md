@@ -16,6 +16,12 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npx expo start
    ```
 
+## Backend y datos persistentes
+
+Los torneos de eSports, los eventos deportivos y sus inscripciones se guardan en MySQL. También se conservan las canchas a las que se anota cada usuario. Inicia MySQL desde XAMPP y ejecuta el backend siguiendo las instrucciones de [backend/README.md](backend/README.md).
+
+La app usa `http://localhost:3000` por defecto. Para cambiar la dirección, define `EXPO_PUBLIC_API_URL` en el archivo `.env` de la raíz, por ejemplo `EXPO_PUBLIC_API_URL=http://192.168.1.20:3000`. Si pruebas desde un teléfono, usa la IP local de la computadora en lugar de `localhost` y reinicia Expo.
+
 In the output, you'll find options to open the app in a
 
 - [development build](https://docs.expo.dev/develop/development-builds/introduction/)

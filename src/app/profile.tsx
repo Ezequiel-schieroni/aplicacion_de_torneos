@@ -1,17 +1,45 @@
 import { Redirect, useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { getSportEvents, type SportEvent } from '../services/sports-state';
 import { getCurrentUser, isAuthenticated } from './auth-state';
-import { getRegisteredTournamentIds, getTournaments } from './esport/tournament-state';
+import { getRegisteredTournamentIds, getTournaments, type Tournament } from './esport/tournament-state';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const user = getCurrentUser();
-  const tournaments = getTournaments();
-  const registeredIds = getRegisteredTournamentIds();
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [sportEvents, setSportEvents] = useState<SportEvent[]>([]);
+  const [registeredIds, setRegisteredIds] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([getTournaments(), getRegisteredTournamentIds(), getSportEvents()])
+      .then(([loadedTournaments, registrations, loadedSportEvents]) => {
+        if (active) {
+          setTournaments(loadedTournaments);
+          setRegisteredIds(registrations);
+          setSportEvents(loadedSportEvents);
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          Alert.alert('No se pudo cargar el perfil', error instanceof Error ? error.message : 'Inténtalo nuevamente.');
+        }
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
+
   const registered = tournaments.filter((tournament) => registeredIds.includes(tournament.id));
   const created = tournaments.filter((tournament) => tournament.ownerId === user?.id);
+  const registeredSportEvents = sportEvents.filter((event) => event.isRegistered);
+  const createdSportEvents = sportEvents.filter((event) => event.ownerId === user?.id);
 
   if (!isAuthenticated() || !user) {
     return <Redirect href="/login" />;
@@ -24,8 +52,10 @@ export default function ProfileScreen() {
         <ScrollView contentContainerStyle={styles.page}>
           <Pressable onPress={() => router.replace('/')} style={({ pressed }) => [styles.back, pressed && styles.pressed]}><Text style={styles.backArrow}>←</Text><Text style={styles.backText}>Volver al inicio</Text></Pressable>
           <View style={styles.header}><View style={styles.avatar}><View style={styles.hair} /><View style={styles.face} /><View style={styles.shoulders} /></View><View><Text style={styles.eyebrow}>PERFIL DE COMPETIDOR</Text><Text style={styles.username}>{user.username}</Text><Text style={styles.email}>{user.email}</Text></View></View>
-          <View style={styles.section}><Text style={styles.sectionTitle}>Torneos inscriptos</Text>{registered.length === 0 ? <Text style={styles.empty}>Todavía no estás inscripto en ningún torneo.</Text> : registered.map((tournament) => <TournamentRow key={tournament.id} title={tournament.name} game={tournament.game} />)}</View>
-          <View style={styles.section}><Text style={styles.sectionTitle}>Torneos creados por vos</Text>{created.length === 0 ? <Text style={styles.empty}>Todavía no creaste ningún torneo.</Text> : created.map((tournament) => <TournamentRow key={tournament.id} title={tournament.name} game={tournament.game} />)}</View>
+          <View style={styles.section}><Text style={styles.sectionTitle}>Torneos inscriptos</Text>{isLoading ? <Text style={styles.empty}>Cargando torneos...</Text> : registered.length === 0 ? <Text style={styles.empty}>Todavía no estás inscripto en ningún torneo.</Text> : registered.map((tournament) => <TournamentRow key={tournament.id} title={tournament.name} game={tournament.game} />)}</View>
+          <View style={styles.section}><Text style={styles.sectionTitle}>Torneos creados por vos</Text>{isLoading ? <Text style={styles.empty}>Cargando torneos...</Text> : created.length === 0 ? <Text style={styles.empty}>Todavía no creaste ningún torneo.</Text> : created.map((tournament) => <TournamentRow key={tournament.id} title={tournament.name} game={tournament.game} />)}</View>
+          <View style={styles.section}><Text style={styles.sectionTitle}>Deportes inscriptos</Text>{isLoading ? <Text style={styles.empty}>Cargando eventos...</Text> : registeredSportEvents.length === 0 ? <Text style={styles.empty}>Todavía no estás inscripto en eventos deportivos.</Text> : registeredSportEvents.map((event) => <TournamentRow key={event.id} title={event.name} game={`${event.kind} · ${event.sport}`} />)}</View>
+          <View style={styles.section}><Text style={styles.sectionTitle}>Eventos deportivos creados por vos</Text>{isLoading ? <Text style={styles.empty}>Cargando eventos...</Text> : createdSportEvents.length === 0 ? <Text style={styles.empty}>Todavía no creaste eventos deportivos.</Text> : createdSportEvents.map((event) => <TournamentRow key={event.id} title={event.name} game={`${event.kind} · ${event.sport}`} />)}</View>
         </ScrollView>
       </SafeAreaView>
     </View>
